@@ -1,0 +1,1 @@
+Medior dev + AI Engineer at SAP (external via PwC). Budapest Hungary. Neuroscience research background, not engineering — sometime need engineering guidance. Mostly Financial Analyst (FAA) team, sometime other team. Repos at /Users/C5418860/VSCodeRepos.

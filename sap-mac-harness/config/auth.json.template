@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "providers": {},
+  "active_provider": null,
+  "updated_at": "2026-10-05T15:07:18.888826+00:00",
+  "credential_pool": {
+    "custom:local-(localhost:6655)": [
+      {
+        "id": "1fb2c5",
+        "label": "model_config",
+        "auth_type": "api_key",
+        "priority": 0,
+        "source": "model_config",
+        "last_status": "ok",
+        "last_status_at": null,
+        "last_error_code": null,
+        "last_error_reason": null,
+        "last_error_message": null,
+        "last_error_reset_at": null,
+        "base_url": "http://localhost:6655/litellm/v1",
+        "request_count": 5,
+        "secret_fingerprint": "sha256:71bbdd9c9dfd481a",
+        "failure_reason": "auth"
+      }
+    ],
+    "custom:hyperspace-ai": [],
+    "copilot": [
+      {
+        "id": "bfa499",
+        "label": "gh auth token",
+        "auth_type": "api_key",
+        "priority": 0,
+        "source": "gh_cli",
+        "last_status": null,
+        "last_status_at": null,
+        "last_error_code": null,
+        "last_error_reason": null,
+        "last_error_message": null,
+        "last_error_reset_at": null,
+        "base_url": "https://api.githubcopilot.com",
+        "request_count": 0,
+        "secret_fingerprint": "sha256:417b2304adf0b39d"
+      }
+    ]
+  }
+}

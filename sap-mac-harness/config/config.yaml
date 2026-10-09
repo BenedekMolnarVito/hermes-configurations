@@ -1,0 +1,198 @@
+model:
+  default: anthropic--claude-4.8-opus
+  provider: custom
+  base_url: http://localhost:6655/litellm/v1
+  api_key: ${HERMES_CUSTOM_LOCALHOST_6655_API_KEY}
+  aliases:
+    deep:
+      model: anthropic--claude-4.8-opus
+      provider: custom
+      base_url: http://localhost:6655/litellm/v1
+      key_env: HERMES_CUSTOM_LOCALHOST_6655_API_KEY
+    standard:
+      model: anthropic--claude-4.6-sonnet
+      provider: custom
+      base_url: http://localhost:6655/litellm/v1
+      key_env: HERMES_CUSTOM_LOCALHOST_6655_API_KEY
+    quick:
+      model: anthropic--claude-4.5-haiku
+      provider: custom
+      base_url: http://localhost:6655/litellm/v1
+      key_env: HERMES_CUSTOM_LOCALHOST_6655_API_KEY
+agent:
+  max_turns: 150
+web:
+  backend: firecrawl
+browser:
+  backend: "off"
+  headed: true
+  use_real_profile: true
+  real_profile_autoclose: true
+  real_profile_pin: Profile 1
+display:
+  tool_progress: all
+memory:
+  provider: hindsight
+delegation:
+  model: anthropic--claude-4.6-sonnet
+  provider: custom
+  reasoning_effort: high
+  oneshot_max_children: 2
+command_allowlist:
+  - delete in root path
+  - git reset --hard (destroys uncommitted changes)
+  - script execution via -e/-c flag
+  - script execution via heredoc
+plugins:
+  scan_on_install: false
+  enabled:
+    - delegate-pertask-model-patch
+    - hindsight
+    - hindsight-condense-patch
+    - superpowers
+  disabled:
+    - probe-effort-observer
+  entries:
+    delegate-pertask-model-patch:
+      allow_tool_override: true
+    hindsight-condense-patch:
+      allow_tool_override: true
+onboarding:
+  seen:
+    tool_progress_prompt: true
+    busy_input_prompt: true
+computer_use:
+  backend: cua
+_config_version: 50
+custom_providers:
+  - name: Local (localhost:6655)
+    base_url: http://localhost:6655/litellm/v1
+    key_env: HERMES_CUSTOM_LOCALHOST_6655_API_KEY
+    model: anthropic--claude-4.8-opus
+    models:
+      anthropic--claude-4.5-haiku: {}
+      anthropic--claude-4.5-opus: {}
+      anthropic--claude-4.5-sonnet: {}
+      anthropic--claude-4.6-opus: {}
+      anthropic--claude-4.6-sonnet: {}
+      anthropic--claude-4.7-opus: {}
+      anthropic--claude-4.8-opus: {}
+      gemini-2.5-flash: {}
+      gemini-2.5-flash-lite: {}
+      gemini-2.5-pro: {}
+      gemini-3.1-flash-lite: {}
+      gemini-3.5-flash: {}
+      gemini-embedding: {}
+      gpt-4.1: {}
+      gpt-4.1-mini: {}
+      gpt-5: {}
+      gpt-5-mini: {}
+      gpt-5.4: {}
+      gpt-5.5: {}
+      gpt-5.6-luna: {}
+      gpt-5.6-sol: {}
+      gpt-5.6-terra: {}
+      sonar: {}
+      sonar-pro: {}
+      text-embedding-3-large: {}
+      text-embedding-3-small: {}
+      gemini-3.8-flash: {}
+    models_discovered: true
+  - name: Hermes MAC
+    base_url: http://localhost:11434/v1
+    key_env: CUSTOM_API_KEY
+    model: gemma4:31b
+    models:
+      gemma4:31b: {}
+mcp_servers:
+  sap-jira:
+    url: https://mcp.jira.tools.sap/mcp
+    auth: oauth
+    enabled: true
+platform_toolsets:
+  cli:
+    - browser
+    - clarify
+    - code_execution
+    - context_engine
+    - delegation
+    - file
+    - memory
+    - session_search
+    - skills
+    - terminal
+    - todo
+    - web
+known_plugin_toolsets:
+  cli:
+    - a2a
+    - spotify
+known_builtin_toolsets:
+  cli:
+    - browser
+    - clarify
+    - code_execution
+    - computer_use
+    - connections
+    - context_engine
+    - cronjob
+    - delegation
+    - discord
+    - discord_admin
+    - file
+    - homeassistant
+    - image_gen
+    - kanban
+    - memory
+    - session_search
+    - skills
+    - spotify
+    - stt
+    - terminal
+    - todo
+    - tts
+    - video
+    - video_gen
+    - vision
+    - web
+    - x_search
+    - yuanbao
+approvals:
+  destructive_slash_confirm: false
+telemetry:
+  shared_metrics:
+    enabled: true
+    send: true
+skills:
+  trusted_project_dirs:
+    - /Users/C5418860/temp/treasury-scribe
+hooks:
+  pre_tool_call:
+    - matcher: delegate_task
+      command: ~/.hermes/agent-hooks/hook_delegate_route.py
+      timeout: 30
+    - matcher: delegate_task|web_extract
+      command: ~/.hermes/agent-hooks/hook_batch_guard.py
+      timeout: 15
+    - matcher: browser_click
+      command: ~/.hermes/agent-hooks/hook_browser_select.py
+      timeout: 20
+    - matcher: write_file|patch
+      command: ~/.hermes/agent-hooks/hook_citation_guard.py
+      timeout: 20
+    - matcher: mcp__sap_jira__jira_create_issue
+      command: ~/.hermes/agent-hooks/hook_jira_classify.py
+      timeout: 20
+    - matcher: read_file|web_extract|write_file
+      command: ~/.hermes/agent-hooks/hook_bulk_io_guard.py
+      timeout: 30
+  pre_llm_call:
+    - command: ~/.hermes/agent-hooks/hook_skill_route.py
+      timeout: 15
+  transform_tool_result:
+    - matcher: delegate_task
+      command: ~/.hermes/agent-hooks/hook_caveman_report.py
+      timeout: 10
+    - matcher: hindsight_recall|hindsight_reflect
+      command: ~/.hermes/agent-hooks/hook_hindsight_condense.py
+      timeout: 15

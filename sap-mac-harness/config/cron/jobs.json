@@ -1,0 +1,58 @@
+{
+  "jobs": [
+    {
+      "id": "2d5c3f4e248d",
+      "name": "PR 259 re-review watcher",
+      "prompt": "",
+      "skills": [],
+      "skill": null,
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": "watch_faa_pr259.sh",
+      "no_agent": true,
+      "monitor_script": null,
+      "monitor_url": null,
+      "monitor_state": null,
+      "context_from": null,
+      "schedule": {
+        "kind": "interval",
+        "minutes": 10,
+        "display": "every 10m"
+      },
+      "schedule_display": "every 10m",
+      "repeat": {
+        "times": null,
+        "completed": 330
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-10-02T15:25:24.711474+02:00",
+      "next_run_at": "2026-10-09T12:12:35.434055+02:00",
+      "last_run_at": "2026-10-09T12:02:35.434055+02:00",
+      "last_status": "ok",
+      "last_error": null,
+      "last_delivery_error": null,
+      "last_delivery_unverified": null,
+      "failure_streak": 0,
+      "deliver": "local",
+      "origin": null,
+      "enabled_toolsets": null,
+      "workdir": null,
+      "last_dispatch": {
+        "scheduled_at": "2026-10-09T12:01:36.625016+02:00",
+        "dispatched_at": "2026-10-09T12:02:30.266556+02:00",
+        "lateness_seconds": 53.6,
+        "kind": "on_time"
+      },
+      "fire_claim": null,
+      "last_failure": {
+        "at": "2026-10-08T03:14:06.352137+02:00",
+        "detail": "Script exited with code 1\nstderr:\nTraceback (most recent call last):\n  File \"/Users/C5418860/.hermes/scripts/poll_pr.py\", line 220, in <module>\n    sys.exit(main())\n             ~~~~^^\n  File \"/Users/C5418860/.hermes/scripts/poll_pr.py\", line 141, in main\n    for r in gh_json(f\"repos/{repo}/pulls/{pr}/reviews\"):\n             ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/C5418860/.hermes/scripts/poll_pr.py\", line 44, in gh_json\n    raise RuntimeError(f\"gh api {path} failed: {out.stderr.strip()}\")\nRuntimeError: gh api repos/cfa-ai-incubation/fin-analyst-agent/pulls/259/reviews failed: Get \"https://github.tools.sap/api/v3/repos/cfa-ai-incubation/fin-analyst-agent/pulls/259/reviews?per_page=100\": read tcp [2a01:36d:120:46ce:6d0d:7112:e1e9:f471]:52863->[2600:1901:0:5a23::]:443: read: connection reset by peer"
+      }
+    }
+  ],
+  "updated_at": "2026-10-09T12:02:35.435102+02:00"
+}

@@ -1,0 +1,19 @@
+# sap-mac-harness — never commit live secrets or machine-local runtime state.
+# Only the *.template files and redacted config belong in git.
+
+# Live secret files (import side produces these from the .template files)
+config/.env
+config/auth.json
+
+# Common secret filename patterns, just in case
+*.secret
+*.key
+*.pem
+.env
+!config/.env.template
+
+# OS / editor noise
+.DS_Store
+**/__pycache__/
+*.pyc
+*.swp

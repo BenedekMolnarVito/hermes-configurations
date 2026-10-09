@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ $# -ne 1 || -z "$1" ]]; then
+  printf 'Usage: %s '\''<shell command>'\''\n' "$0" >&2
+  exit 64
+fi
+
+repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || {
+  printf 'Error: current directory is not inside a Git worktree.\n' >&2
+  exit 2
+}
+
+matches=()
+targets=()
+
+while IFS= read -r container_id; do
+  target=$(docker inspect "$container_id" --format '{{range .Mounts}}{{if eq .Type "bind"}}{{printf "%s\t%s\n" .Source .Destination}}{{end}}{{end}}' \
+    | while IFS=$'\t' read -r source destination; do
+        if [[ "$source" == "$repo_root" ]]; then
+          printf '%s\n' "$destination"
+          break
+        fi
+      done)
+  if [[ -n "$target" ]]; then
+    matches+=("$container_id")
+    targets+=("$target")
+  fi
+done < <(docker ps -q)
+
+if [[ ${#matches[@]} -eq 0 ]]; then
+  printf 'Error: no running container bind-mounts this exact worktree: %s\n' "$repo_root" >&2
+  printf 'Open this checkout/worktree in its VS Code devcontainer, then retry.\n' >&2
+  exit 3
+fi
+if [[ ${#matches[@]} -ne 1 ]]; then
+  printf 'Error: multiple running containers bind-mount this worktree; refusing ambiguous execution.\n' >&2
+  printf 'Containers: %s\n' "${matches[*]}" >&2
+  exit 4
+fi
+
+exec docker exec -i -w "${targets[0]}" "${matches[0]}" bash -lc "$1"
