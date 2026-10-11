@@ -5,14 +5,17 @@ per config. Each folder is an importable, redacted export of a full Hermes insta
 (config, persona, memory, skills, agent-hooks, cron, MCP wiring) that can be dropped
 onto a new machine and brought up with its own importer.
 
-Folders are **independent**: a config folder copies nothing from outside itself and
-touching one never affects another.
+Folders are **independent**: a config folder copies nothing from a sibling and
+touching one never affects another. They must be imported into **separate**
+`$HERMES_HOME` locations (or separate Hermes profiles) — never merged (see
+[CONTRIBUTING.md](./CONTRIBUTING.md) → "Config isolation").
 
 ## Configurations in this repo
 
 | Folder | Source OS | Notes |
 |---|---|---|
 | [`sap-mac-harness/`](./sap-mac-harness) | macOS | SAP/FAA workstation; localhost LiteLLM + Ollama, hindsight memory, superpowers, jev hooks |
+| [`home-win-harness/`](./home-win-harness) | Windows 11 | Personal config; cloud OpenRouter (tier-router), hindsight memory, jev hooks; no local services. Separate from sap-mac-harness (see "Config isolation"). |
 
 > Add a row here when you add a new config folder.
 
@@ -30,10 +33,12 @@ In short:
 3. **Redact all secrets** into `*.template` files (`__SET_ME_ON_IMPORT__`
    placeholders) — never commit a live `.env` or `auth.json`.
 4. Add a per-folder `README.md`, `MANIFEST.md`, `install.sh`, and `.gitignore`
-   (use `sap-mac-harness/` as the reference template).
+   (use `sap-mac-harness/` or `home-win-harness/` as the reference template).
 5. Document that folder's machine-local assumptions (endpoints, paths, plugins,
    MCP auth) and, for a different OS, the cross-OS caveats in CONTRIBUTING.md.
 6. Add a row to the table above.
 
-The actual authoring of a second config is **out of scope** here — this repo is
-set up so one can be added by following CONTRIBUTING.md and copying the layout.
+This repo now contains two self-contained configs (`sap-mac-harness` and
+`home-win-harness`), each a complete, independent export. See
+CONTRIBUTING.md to add another — configs must never be merged into one
+`$HERMES_HOME` (see "Config isolation").

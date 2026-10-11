@@ -1,0 +1,30 @@
+# home-win-harness — never commit live secrets or machine-local runtime state.
+# Only the *.template files and redacted config belong in git.
+# NOTE: this config is intentionally isolated from sap-mac-harness; see
+# CONTRIBUTING.md "Config isolation" — never import two configs into one
+# $HERMES_HOME.
+
+# Live secret files (import side produces these from the .template files)
+config/.env
+config/auth.json
+config/*.lock
+
+# Hermes curator/runtime state output (should never appear in a clean export)
+config/skills/.hub/
+
+# Common secret filename patterns, just in case
+*.secret
+*.key
+*.pem
+.env
+
+# Live env/auth sidecar lockfiles
+*.lock
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+Desktop.ini
+**/__pycache__/
+*.pyc
+*.swp

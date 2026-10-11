@@ -1,0 +1,179 @@
+# ======================================================================
+# Hermes config.yaml — WINDOWS 11 PORTED version
+# ----------------------------------------------------------------------
+# Ported from the macOS original (config/config.yaml.macos-original).
+# Only machine/OS-specific items were changed; everything else is identical.
+#
+# WHAT CHANGED FROM THE macOS ORIGINAL  (see IMPORT_GUIDE.md "Caveats"):
+#   1. skills.trusted_project_dirs  -> macOS path removed; add your Windows
+#      project path(s) if/when you have them.
+#   2. hooks.*.command             -> LEFT AS-IS ON PURPOSE. Hermes on Windows
+#      auto-prepends the interpreter for a bare .py hook (maps .py -> python
+#      via sys.executable) and expands "~" to %USERPROFILE%. So these work
+#      UNCHANGED *provided Python is on PATH* and the agent-hooks/ folder +
+#      jevlib/ were copied to %USERPROFILE%\.hermes\agent-hooks\ .
+#      You MUST re-approve them once (the shell-hooks allowlist is NOT ported;
+#      mtimes change on copy). See the guide.
+#   3. model.base_url / custom_providers -> point at http://localhost:6655
+#      (your LiteLLM proxy) and http://localhost:11434 (Ollama). These are
+#      LOCAL services: they only work on Windows if you also run that proxy /
+#      Ollama on the Windows box. Otherwise switch model.provider to a direct
+#      cloud provider + key. NOT OS-specific, but environment-specific.
+#   4. mcp_servers is empty (no MCP servers configured here). Add your own on
+#      import; OAuth-bearing servers re-authenticate on first use on Windows.
+#   5. memory.provider: hindsight -> needs the hindsight plugin + its env vars
+#      (HINDSIGHT_API_URL / _API_KEY / _BANK_ID) present in .env. Ported.
+#
+# DO NOT hand-edit this file into a live install with a text editor that adds
+# a UTF-8 BOM (Notepad does) -> Hermes shows HTTP 400 "No models provided".
+# Save as UTF-8 WITHOUT BOM, or let `hermes config edit` write it.
+# ======================================================================
+model:
+  default: meta/muse-spark-1.3-contributor
+  provider: openrouter
+  base_url: https://openrouter.ai/api/v1
+  aliases:
+    deep:
+      model: meta/muse-spark-1.3-contributor
+      provider: openrouter
+    quick:
+      model: poolside/laguna-xs-2.1:free
+      provider: openrouter
+    long-horizon-complex:
+      model: meta/muse-spark-1.3-contributor
+      provider: openrouter
+    moderate:
+      model: poolside/laguna-s-2.1:free
+      provider: openrouter
+  # aliases:
+  #   deep:
+  #     model: openai/gpt-6.1-sol
+  #     provider: openrouter
+  #   quick:
+  #     model: openai/gpt-6-luna-pro
+  #     provider: openrouter
+  #   long-horizon-complex:
+  #     model: openai/gpt-6-astra
+  #     provider: openrouter
+  #   moderate:
+  #     model: anthropic/claude-opus-5.5
+  #     provider: openrouter
+  api_mode: chat_completions
+agent:
+  max_turns: 150
+  reasoning_effort: high
+web:
+  backend: firecrawl
+browser:
+  backend: "off"
+  headed: true
+  use_real_profile: true
+  real_profile_autoclose: true
+  real_profile_pin: Profile 1
+display:
+  tool_progress: all
+memory:
+  provider: hindsight
+delegation:
+  model: poolside/laguna-s-2.1:free
+  provider: openrouter
+  reasoning_effort: minimal
+command_allowlist:
+  - command parser limit or malformed executable payload
+  - delete in root path
+  - recursive delete
+  - script execution via -e/-c flag
+  - script execution via heredoc
+plugins:
+  scan_on_install: false
+  enabled:
+    - hindsight
+    - tier-router
+  disabled:
+    - probe-effort-observer
+onboarding:
+  seen:
+    tool_progress_prompt: true
+    busy_input_prompt: true
+computer_use:
+  backend: cua
+_config_version: 50
+mcp_servers:
+platform_toolsets:
+  cli:
+    - browser
+    - clarify
+    - code_execution
+    - context_engine
+    - delegation
+    - file
+    - memory
+    - session_search
+    - skills
+    - terminal
+    - todo
+    - web
+known_plugin_toolsets:
+  cli:
+    - a2a
+    - spotify
+known_builtin_toolsets:
+  cli:
+    - browser
+    - clarify
+    - code_execution
+    - computer_use
+    - connections
+    - context_engine
+    - cronjob
+    - delegation
+    - discord
+    - discord_admin
+    - file
+    - homeassistant
+    - image_gen
+    - kanban
+    - memory
+    - session_search
+    - skills
+    - spotify
+    - stt
+    - terminal
+    - todo
+    - tts
+    - video
+    - video_gen
+    - vision
+    - web
+    - x_search
+    - yuanbao
+approvals:
+  destructive_slash_confirm: false
+telemetry:
+  shared_metrics:
+    enabled: true
+    send: true
+skills:
+  trusted_project_dirs:
+    - C:\Users\molna\VSCodeRepos\treasury-scribe
+  # ^ macOS path (/Users/C5418860/temp/treasury-scribe) removed on port.
+  #   Add Windows paths with forward slashes, e.g.:
+  #     - C:/Users/<you>/VSCodeRepos/treasury-scribe
+hooks:
+  pre_tool_call:
+    - matcher: delegate_task|web_extract
+      command: ~/.hermes/agent-hooks/hook_batch_guard.py
+      timeout: 15
+    - matcher: browser_click
+      command: ~/.hermes/agent-hooks/hook_browser_select.py
+      timeout: 20
+    - matcher: write_file|patch
+      command: ~/.hermes/agent-hooks/hook_citation_guard.py
+      timeout: 20
+  pre_llm_call:
+    - command: ~/.hermes/agent-hooks/hook_skill_route.py
+      timeout: 15
+  transform_tool_result:
+    - matcher: delegate_task
+      command: ~/.hermes/agent-hooks/hook_caveman_report.py
+      timeout: 10

@@ -29,6 +29,12 @@ machine.
 5. **Document machine-local assumptions.** Any endpoint, path, plugin, or service
    the config depends on must be spelled out in that folder's README so an
    importer knows what to stand up or change.
+6. **Configs never collide.** A config folder is a complete, self-contained
+   `$HERMES_HOME` export for ONE machine/profile (see §6). Never import two
+   config folders into the same `$HERMES_HOME` — they carry different secret
+   sets, provider auth, cron jobs, and memory banks, and the second import will
+   back up then overwrite the first. To run two configs side-by-side, use
+   separate `$HERMES_HOME` directories or `hermes profiles`.
 
 ---
 
@@ -89,6 +95,9 @@ from `$HERMES_HOME` (default `~/.hermes` on macOS/Linux,
    grep -rn '__SET_ME_ON_IMPORT__' <folder>/config/.env.template \
                                    <folder>/config/auth.json.template
    # and diff against the live files to confirm no real value leaked
+   # also scan the bundle for real token prefixes — only comment/doc examples
+   # or sha256: fingerprints should appear:
+   grep -rnE 'ghp_|xoxb-|xapp-|hsk_|apikey_|3ee73eb9|sk-or-v1-|sk-proj-' <folder>/config/ || true
    ```
 6. **Register it:** add a row to the table in the top-level `README.md`.
 
@@ -131,3 +140,34 @@ Verify what you can locally (importer dry-run + `--apply` into a scratch home,
 target-side steps (plugin install, hook approval, provider switch, MCP re-auth,
 localhost services) as **guided, not executed**. Do not present an un-run sequence
 as validated.
+
+---
+
+## 6. Config isolation (configs must never collide)
+
+Each top-level folder in this repo is a **complete, self-contained Hermes
+configuration for a single machine/profile**. They are deliberately NOT
+mergeable, and importing two of them into the same `$HERMES_HOME` will
+overwrite one with the other:
+
+- **Different secrets.** Each config redacts its own `.env` secret set (which
+  varies per machine — e.g. `home-win-harness` redacts 10 keys vs.
+  `sap-mac-harness`'s 5). Never copy a live `.env`/`auth.json` between folders.
+- **Different provider auth.** `auth.json` holds per-machine provider
+  credentials (sha256 fingerprints only here); OAuth tokens do not transfer.
+  Importing config B over config A's live home leaves A's live `.env`/`auth.json`
+  untouched (non-destructive), but `config.yaml`, skills, memories, and cron
+  **will** be backed up and overwritten/merged.
+- **Different memory banks.** `HINDSIGHT_BANK_ID` and the `hindsight`-memory
+  plugin state are per-config; merging homes mixes memory banks.
+- **Different cron.** Each config's `cron/jobs.json` defines that machine's
+  jobs; importing overwrites the target's cron.
+- **Different machine-local paths.** `skills.trusted_project_dirs`, hook paths,
+  and service endpoints are per-machine.
+
+**To run two configs side-by-side on one machine, use separate Hermes profiles
+(`hermes profiles`) or separate `$HERMES_HOME` directories** — never drop two
+configs' `config/` trees into the same home. Each folder's `README.md` and
+`MANIFEST.md` state the source machine and `HERMES_HOME` so they cannot be
+confused; add a row to the top-level `README.md` config table when you add a
+folder.

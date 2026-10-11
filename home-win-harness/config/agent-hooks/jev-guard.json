@@ -1,0 +1,10 @@
+{
+  "routing": {
+    "deep":     {"provider": "custom", "model": "anthropic--claude-4.8-opus",   "reasoning_effort": "high"},
+    "standard": {"provider": "custom", "model": "anthropic--claude-4.6-sonnet", "reasoning_effort": "medium"},
+    "quick":    {"provider": "custom", "model": "anthropic--claude-4.5-haiku",  "reasoning_effort": "minimal"},
+    "thresholds": {"deep_min": 1.5, "standard_min": 0.6}
+  },
+  "caveman": {"enabled": true, "apply_to": ["subagent_brief", "subagent_report"]},
+  "jev": {"model": "jev-latest", "timeout_seconds": 30, "fail_open": true}
+}
