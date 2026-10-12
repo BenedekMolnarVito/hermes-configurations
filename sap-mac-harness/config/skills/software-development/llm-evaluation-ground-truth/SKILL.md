@@ -38,12 +38,28 @@ Use this workflow when adding, correcting, or reviewing reference answers for an
 - Keep chart/table grain consistent with analytical metadata. An analytic slice must reproduce the displayed rows through the real query path; omit it when the displayed aggregation is derived client-side and cannot be represented honestly. If both component and leaf detail are needed, present them as separate reconciled levels.
 - State exclusions and sibling relationships explicitly when confusing them would change the total.
 - Prefer closed periods or otherwise versioned snapshots for numeric references; record provenance sufficient to regenerate them.
+- Re-anchoring a period-dated row when the backing data genuinely MOVED (a redeployed model/cube now holds the periods the old reference's period no longer has): confirm the old scope is empty AND locate where the data now lives (e.g. probe measure-by-period to find the populated fiscal year), then move the period embedded in BOTH the question text and the expected answer forward and re-probe the real figures for the new period — do not keep a stale figure under a new period, and do not leave the question asking for a period that is empty. This is distinct from a key-shape empty (rule 4): here the empty is real, so the fix is a period shift + fresh probe, not a filter-shape fix. Re-derive the moved-period narrative too — a 'closed, nets to zero' story from the old period may be false for the new one.
+  Re-anchor marker convention: prefix the retrieval_recipe with `Re-anchored: <old period> → <new period> (<reason>).` This single token is used as the exemption trigger in any integrity guards that bar open-period rows — add a `recipe.lstrip().startswith("Re-anchored:")` branch alongside DATE-HORIZON and Budget/Forecast branches. The marker simultaneously serves as a self-documenting provenance note in the dataset.
+- Cross-dataset rows (one question whose parts come from different data products/cubes): verify EACH part against ITS OWN source independently — one half can still be valid while the other is stale, because they can sit on separate cubes with separate data lifecycles. When re-anchoring, move every part to ONE coherent timeframe so the single question is internally consistent, rather than mixing a re-anchored part with a left-alone part at a different period.
+- Structure/master-data rows (hierarchy node codes, children, company-code lookups) carry no period figure — if the live structure still matches the reference, DO NOT edit the row during a figure re-anchor; a failure there is an agent hallucination to fix in the prompt (rule 11), not a ground-truth change.
 - Do not weaken a reference simply to turn a failing score green. If independent validation disagrees with the agent, classify it as an agent/tool defect and re-scope the work.
 - If later evidence disproves a reference edited during the task, correct the reference and its provenance immediately, explicitly document why the earlier evidence was invalid, and rerun the active judge against the exact corrected dataset revision.
 
 ## Planning and execution ordering
 
 When the user asks for prerequisite cleanup followed by a plan, perform the requested cleanup first and then write the plan. A planning skill's normal no-mutation rule does not override an explicit ordered request that includes bounded preparatory actions. Save the plan at the exact repository path requested by the user; use the default plan directory only when no target is specified.
+
+## Editing the dataset programmatically
+
+The FAA evaluation dataset is a structured JSON file with three parallel maps (`inputs`, `query_args`, `expectations`). Do NOT use `patch` to edit it — the file contains nested escaped JSON strings (chart-json blocks, analyticSlice objects) that `patch` cannot match once they differ by a single character. The correct approach:
+
+1. Load with `json.loads(Path(...).read_text())` in `execute_code`.
+2. Edit the Python dict in-memory (question text, expected_response, retrieval_recipe).
+3. Verify assertions on the in-memory dict before writing.
+4. Write back with `Path(...).write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")`.
+5. Reload from disk and re-assert to confirm the write landed correctly.
+
+When live-probed figures are available from a prior session's scratch file, read that file first and treat its reconciled values as authoritative rather than re-probing — probing requires a running stack and is expensive.
 
 ## Verification gates
 

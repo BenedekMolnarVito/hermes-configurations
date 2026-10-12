@@ -24,8 +24,9 @@ Move a Hermes install (config, skills, memory, cron, secrets) to another machine
   - target:  `hermes import <file>.zip`
 - Essentials only (config + skills + memory + cron + secrets, NO session history) -> hand-build a curated bundle (below). `hermes backup` always snapshots the full `state.db` (often 100 MB+), so it is the wrong tool when the user explicitly wants it left out.
 - Cross-OS (e.g. macOS -> Windows) -> curated bundle PLUS a Windows-ported config and a caveats guide; the raw config carries machine-local paths/services that need porting.
+- Into a GIT REPO (user wants the config version-controlled / shared in a repo folder) -> curated bundle with secrets REDACTED IN PLACE (not encrypted) + a `.gitignore` + an importer. This is a distinct route: see 'Git-repo redacted-export route' below. Do NOT encrypt-and-ship here; the deliverable lives in the repo as plaintext-minus-secrets.
 
-Always run the three decisions as ONE clarify call up front: (1) scope (full / essentials / no-secrets), (2) how to handle machine-local items (rewrite+document / as-is+list / omit), (3) transfer security (encrypt / trusted channel / no-secrets). They shape the entire output.
+Always run the three decisions as ONE clarify call up front: (1) scope (full / essentials / no-secrets), (2) how to handle machine-local items (rewrite+document / as-is+list / omit), (3) transfer security (encrypt / trusted channel / redact-in-place for a git repo / no-secrets). They shape the entire output. For a git-repo target, also confirm: how to handle `auth.json` (redacted template vs omit), and whether to ship an `install.sh` importer alongside the README.
 
 ## What `hermes backup` actually bundles (verify, don't guess)
 
@@ -58,6 +59,23 @@ Confirmed from `hermes_cli/backup.py`:
 - Generate a strong random passphrase; write it to a 0600 file for the user to move to their password manager, and DELIVER IT OUT OF BAND — never in chat, never inside the bundle, never over the same channel as the `.enc`.
 - SHA-256 the ENCRYPTED artifact (safe to share) for integrity.
 - ALWAYS verify recoverability before handing over: decrypt + extract to a temp dir, confirm the tree + `.env` present + the ported YAML still parses, then delete the temp dir.
+
+## Git-repo redacted-export route (version-controlled config in a repo folder)
+
+When the deliverable is a self-contained folder inside a git repo (sibling to other configs), secrets are REDACTED, not encrypted. Procedure on top of the curated bundle:
+
+1. Stage into `<repo>/<folder-name>/config/` so the folder is self-contained and references nothing outside itself. Keep top-level `README.md`, `MANIFEST.md`, `install.sh`, `.gitignore` beside `config/`.
+2. Redact `.env` into `.env.template`: KEEP the full file (comments + non-secret settings at real values), replace ONLY secret VALUES with a visible placeholder like `__SET_ME_ON_IMPORT__`. Classify a line as secret when its KEY matches `(KEY|TOKEN|SECRET|PASS|CRED|API_KEY)` AND the value is non-empty — but keep an allowlist of settings that match the pattern yet are not secrets (e.g. `HERMES_MAX_TOKENS`). Prepend a banner listing which keys were stripped.
+3. Redact `auth.json` into `auth.json.template`: recurse and null/placeholder any string under a secret-ish key or any long opaque string; leave metadata (`version`, `updated_at`, labels, `secret_fingerprint` sha prefixes, `base_url`s). In practice the live `auth.json` often holds NO plaintext tokens at all (only fingerprints) — verify rather than assume, and never hand-edit tokens back in on import; re-auth via `hermes`.
+4. Ship a `.gitignore` that blocks the LIVE files (`config/.env`, `config/auth.json`, `*.key`, `*.pem`) with a `!config/.env.template` negation, as a safety net against committing real secrets later.
+5. Ship an idempotent `install.sh` importer: dry-run by DEFAULT, `--apply` to copy; resolve target from `${HERMES_HOME:-$HOME/.hermes}`; back up any plain file it would overwrite to `*.bak-<ts>`; and for secret files, seed the `.template` ONLY if no live `.env`/`auth.json` exists on the target — NEVER clobber a live secret file. Test it end-to-end into a scratch `HERMES_HOME` (dry-run, `--apply`, then `--apply` again to prove idempotency) before committing.
+6. Before `git add`, run a secret-leak gate and assert no live `.env`/`auth.json` is staged.
+
+### Secret-leak scan pitfalls (both cost time if naive)
+
+- Match the FULL secret value, not substrings: scanning for a secret value with a low length floor false-positives on short/common substrings (a key whose value happens to contain a dictionary word matches that word in skill docs). Require the whole value to appear verbatim and set a length floor (>=16) before flagging.
+- Exclude URLs and fingerprints from the auth-secret scan: `base_url`s (`http(s)://...`) and `sha256:` fingerprints are long opaque strings but belong in the config and docs. A scan that flags every long string reports the endpoints as leaks. Skip strings starting `http://`, `https://`, `sha256:`, and ISO timestamps before flagging.
+- A documented dummy value (e.g. the Ollama `CUSTOM_API_KEY`, which the local server ignores) appearing in a skill doc is not a real leak — it was already redacted in the template; leave the doc.
 
 ## macOS -> Windows caveats (the ones that cost time)
 

@@ -36,7 +36,7 @@ memory:
 delegation:
   model: anthropic--claude-4.6-sonnet
   provider: custom
-  reasoning_effort: high
+  reasoning_effort: medium
   oneshot_max_children: 2
 command_allowlist:
   - delete in root path

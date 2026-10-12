@@ -1,6 +1,6 @@
 # MANIFEST — sap-mac-harness
 
-Generated: 2026-10-09T10:18:09Z
+Generated: 2026-10-12T08:40:00Z
 Source host: macOS (Hermes home $HERMES_HOME = ~/.hermes)
 
 ## Top-level
@@ -27,10 +27,10 @@ skills/                            skill catalog incl .archive (curator machiner
 
 ## Counts
 ```
-config files total : 353
+config files total : 356
 config total size   : 4.0M
-skills (SKILL.md)   : 91
-agent-hooks (.py)   : 9
+skills (SKILL.md)   : 92
+agent-hooks (.py)   : 16
 cron jobs           : 1
 ```
 

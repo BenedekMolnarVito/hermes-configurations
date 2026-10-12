@@ -118,10 +118,13 @@ verbatim. Two mechanical swaps must happen together or the committed prompt is
 self-contradictory:
 
 1. Swap every placeholder wire name to the confirmed one from the target branch
-   (e.g. a placeholder product-id dimension → the real `STEERING_PRODUCT` for a
-   filter/name lookup, or the real breakdown-row dimension for grouping). Export
-   the source prose first (`git stash show -p stash@{0} > /tmp/x.diff`) and read
-   it, then adapt — do not re-pop a stash onto a diverged tree (it conflicts).
+   (the real product-id dimension for a filter/name lookup, or the real
+   breakdown-row dimension for grouping). Export the source prose first
+   (`git stash show -p stash@{0} > /tmp/x.diff`) and read it, then adapt — do not
+   re-pop a stash onto a diverged tree (it conflicts). CRITICAL: "confirmed on
+   the branch" is NOT the same as "confirmed against the live cube." A wire name
+   a prior branch/doc asserted as real can still be wrong — re-probe it via
+   `get_output_ports` yourself before trusting it (see the alias-map pitfall).
 2. DELETE the "<name> is a placeholder — re-verify" caveats for every name the
    target branch confirmed. Leaving them in commits a prompt that calls a now-
    real wire name a placeholder, which tells the model (and the next editor) the
@@ -265,6 +268,69 @@ no sign, but a stray `+` must not produce malformed output.
   per-slug `load_skill_document(get_data_product(slug))` which bypasses the
   landscape gate for a pure render check.
 
+## Restarting the host local stack to load a SKILL.md edit (and run the eval against it)
+
+Skills load once at app startup, so the running agent keeps the OLD prompt until
+the stack is restarted — confirm with `ps -o lstart= -p <agent_pid>` vs. the
+SKILL.md mtime before trusting any live result; an agent started before your
+edit is testing the old version. Restart recipe + the traps that cost the most:
+
+- SOURCE VAULT EXPORTS INTO THE LAUNCHING SHELL FIRST. `run_app.py` (host stack)
+  needs `XSUAA_URL`, `JWT_CLIENT_ID/SECRET`, `DPG_*`, `MCP_UPSTREAM_URL` in its
+  env or login_server dies with `KeyError: 'XSUAA_URL'` and the orchestrator
+  shuts down. Fetch + source once per shell:
+  `uv run fetch_secrets vault_manifest.yaml --profile local-dev --write-exports`
+  `--export-file-path /tmp/.faa_secrets.sh && source /tmp/.faa_secrets.sh`.
+- UNSET A LEAKED `MCP_SERVER_URL` BEFORE RELAUNCH (the single most deceptive
+  trap). The orchestrator starts the local `dp_mcp_proxy` (:8765) ONLY when
+  `MCP_SERVER_URL` is unset (`if not os.environ.get("MCP_SERVER_URL")`). A value
+  leaked from an earlier shell/iteration (e.g. `http://localhost:8765/mcp`) makes
+  it SKIP launching the proxy AND skip the principal-propagation smoke test, so
+  the agent points at :8765 where nothing listens → every MCP call 403s and the
+  agent answers "I'm stuck - I can't access the data." That produces a FULL eval
+  of access-failure answers that looks like a prompt regression but is pure env.
+  `unset MCP_SERVER_URL` before relaunch; confirm the boot log shows
+  `✓ dp_mcp_proxy ready on 127.0.0.1:8765` AND `✓ MCP token exchange OK` (the
+  exchanged aud must be `data-product-gateway`), not a jump straight from
+  login_server to agent.
+- THE AGENT-START WAIT IS A HARDCODED 120s THAT COLD STARTS EXCEED. `run_app.py`
+  waits `timeout_s=120` for the agent on :8001; a cold start (MLflow/Databricks
+  init + MCP tool discovery + model init) routinely runs longer and the
+  orchestrator then kills the whole stack mid-init. The wait is env-configurable
+  via `AGENT_START_TIMEOUT_S` (if your checkout predates that, it's a one-line
+  `float(os.environ.get("AGENT_START_TIMEOUT_S","120"))` patch at the agent
+  `wait_for_port` call — revert it after so the feature-branch diff stays clean).
+  Launch with `AGENT_START_TIMEOUT_S=300`.
+- RELAUNCH as a tracked background process (never nohup/disown — Hermes rejects
+  shell background wrappers; use `terminal(background=true, notify=[...])`), then
+  poll ports for readiness, no blind sleep: the stack is up when :8000
+  (front_proxy), :8001 (agent), :8765 (dp_mcp_proxy), :5000 (login_server) all
+  listen and the log prints `✅  Stack ready`.
+- RESTART IS DISRUPTIVE — it kills the user's whole local stack (and the
+  login_server that keeps `.user_token` refreshed). Ask before restarting when
+  it's an autonomous/loop iteration; the user may be using the stack
+  interactively.
+- A direct `curl /v2/serve` does NOT replicate the eval's request shape. The eval
+  harness passes per-row `query_args`; a hand-rolled POST (even with
+  `data_product:"prodsteer"`) can trigger the agent's P&L-vs-ProductSteering
+  CLARIFYING question on data rows that the GT recipe forbids. Use a direct curl
+  only to prove the MCP chain is live (real figure, not a 403/"can't access");
+  let the eval harness be the authority on per-row pass/fail. If the live agent
+  returns a clarify question on a data row whose GT says answer-directly, that is
+  a real finding to report (prompt not enforcing the no-clarify rule), not a
+  curl-shape artifact to wave away.
+
+### The 1024-char Agent Skills description limit (silent truncation)
+
+`deepagents.middleware.skills` enforces the Agent Skills spec limit of 1024 chars
+on each SKILL.md frontmatter `description`; an over-long one is truncated to the
+first 1024 chars and the rest is DROPPED from what the model sees when deciding
+whether to use the skill (logged as a WARNING at load, easy to miss in boot
+spam). A prompt rewrite that grows the `description` past 1024 silently loses its
+tail. After any edit that touches the frontmatter description, check its length
+and keep it under 1024 — the body has no such limit, so move detail into the body
+and keep the description a tight trigger.
+
 ## Live smoke test — token valid is NOT enough; Vault data-plane creds gate it
 
 To run the example prompts against a live `/v2/serve` you need BOTH a fresh
@@ -356,6 +422,68 @@ both a plan deviation and a neutral growth control.
 
 - Edit the three analyst skills, not Hermes's own skill library — these are FAA
   in-repo prompt files under `skills/<slug>/`, versioned with the code.
+- ALIAS-MAP TRAP (the single most expensive wire-name error): a cube's
+  `get_output_ports` returns a `default_hierarchies` map keyed by LOGICAL /
+  display names (e.g. `STEERING_PRODUCT`, `DERIVED_SOLUTION_AREA`,
+  `PRODUCT_COSTING_COMPONENT`) that are NOT filterable dimension wire names.
+  Filtering/grouping on an alias key fails with HTTP 502 "fieldName does not
+  belong to the specified hierarchy." ALWAYS take filter/row dimension names from
+  `schema.dimensions[].name` (the real wire names, e.g. `SOLD_PRODUCT_ID`,
+  `DERIVED_SOLUTION_AREA_ID`, `DERIVED_GL_ACCOUNT_ID`), never from the
+  `default_hierarchies` keys. In the skill, state explicitly that the alias keys
+  are display aliases and must never be filtered on, so a future editor does not
+  re-pin them.
+- RE-VERIFY FILE CONTENT AT COMMIT TIME, not just at edit/verify time. A file
+  you confirmed correct early in a session can be silently reverted or
+  overwritten on disk before you stage it (an editor, a parallel subagent, a
+  stray tool, a git op). Immediately before `git add`, re-read the ACTUAL bytes
+  you are about to commit (`git show :<path>` for the staged blob, or re-parse
+  the file and assert a known sentinel value — e.g. a re-anchored figure like
+  `459,399,116.80` must be present and the old `85,044,582.43` absent). A commit
+  MESSAGE that claims a change the staged CONTENT does not contain is worse than
+  no commit: it mislabels history and misleads review. Likewise, an eval/test run
+  only validates what was ON DISK WHEN IT RAN — confirm the file carried the
+  intended content at run time (check mtime vs. run start, or diff the run's
+  recorded inputs) before trusting the score; a passing/failing number against a
+  stale dataset proves nothing about your edit.
+- TRUST THE ON-DISK EVAL DATA FILE OVER A HANDOFF/SCRATCH NOTE for row text,
+  fiscal year, and GT figures. A handoff reflects a PRIOR snapshot; the eval data
+  can be re-anchored (e.g. FY2026->FY2025) between sessions, so a handoff that
+  lists a question as "Q2 2026 ... total -459m" while
+  `tests/evaluation/data/evaluation_data_<slug>.json` says "Q2 2025 ... total
+  -85m" means the FILE is authoritative — probe the EXACT phrasing + GT number
+  from the file, never the handoff's remembered values, or you re-probe the wrong
+  question and misread a correct answer as a miss. The file shape is a dict with
+  `inputs`/`expectations`/`query_args` keyed by question-id string; read
+  `inputs[id].data` for the verbatim question and `expectations[id]` for the GT.
+  THE SAME AUTHORITY APPLIES TO A HANDOFF'S DONE/TODO LIST, not just its figures:
+  when resuming a multi-session task, re-verify COMPLETION STATE on disk before
+  re-doing anything the handoff marks TODO — a handoff is a point-in-time snapshot
+  and a prior session often lands more than it recorded. Programmatically scan the
+  file for the expected figures + the removal of the stale narrative (e.g. a
+  `-?\d[\d,\.]*\s*(?:bn|B|M|m|k|K)\s*EUR` forbidden-scale scan over the PROSE only,
+  and a presence check for each authoritative figure) before touching a row; if a
+  'TODO' row already carries the correct values, mark it done rather than rewriting
+  it, because re-editing a correct row risks regressing it.
+- RE-PROBE BEFORE OVERWRITING A "CONFIRMED" WIRE NAME. When a handoff, a prior
+  branch, or the skill's own text asserts a dimension/measure is real, verify it
+  against the live cube (`get_output_ports`) before writing it into a prompt or
+  believing a one-line "it's wrong" note — the skill reflects what SOME earlier
+  session observed, which may be an AM swap out of date. One `get_output_ports`
+  call settles product vs. solution-area vs. TCO-component dimension names, which
+  measures exist (margin/revenue/`ACTUALS_PY`/`ACTUALS_CC`), and which dims are
+  `filter_kind: hierarchy_node` vs. flat — do that read first, then edit.
+- A flat dimension (`filter_kind` absent, e.g. a product/solution-area leaf dim)
+  takes a `kind: "list"` leaf filter; a `hierarchy_node` filter on its `.YYYY`
+  node key returns 0 rows silently. Only dims with `filter_kind: hierarchy_node`
+  (typically `GL_ACCOUNT_ID`, `PROFIT_CENTER_ID`) take `kind: "hierarchy_node"`.
+  A 0-row result from a hierarchy-node filter on a flat dim looks exactly like
+  'no data' — check the schema's `filter_kind` before concluding the slice is
+  empty.
+- Do NOT assume `ACTUALS_PY` / `ACTUALS_CC` / `GROWTH_CY` exist for YoY/@cc just
+  because the skill lists them — a cube may expose only `ACTUALS_CY`. Confirm
+  each measure in `schema.measures` before an edit teaches the model to send it,
+  and flag absent ones as 'verify via get_output_ports' rather than pinning them.
 - When a routing rule references a measure or dimension whose wire name is STILL
   UNCONFIRMED on the live cube, do NOT invent a literal name. Instead: add an
   HTML comment `<!-- TODO: after <deploy event>, confirm <measure/dim> wire name

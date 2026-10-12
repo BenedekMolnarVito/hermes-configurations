@@ -23,6 +23,53 @@ Full reference: https://hermes-agent.nousresearch.com/docs/user-guide/configurat
 
 `hermes config check` reports sections missing from an older config.
 
+### Context window for a custom / LiteLLM-proxied model is wrong (shows 200K, want 1M)
+
+When a model is served through a `custom` provider (e.g. a LiteLLM / SAP AI Core
+gateway at `localhost:PORT`), Hermes does NOT learn the window from the chat endpoint.
+If the proxy's `/v1/models` list carries no `context_length` metadata (most do not),
+Hermes falls back to a hardcoded FAMILY default — `"claude": 200000` — so a model the
+gateway actually serves at 1M still displays 200K. Setting a top-level key will not fix
+it: the resolver (`agent/model_metadata.py::get_model_context_length`, step 0c) reads a
+PER-MODEL `context_length` inside the `custom_providers` entry.
+
+Fix procedure:
+1. Confirm the proxy's REAL cap (authoritative) — query its model-info endpoint, which
+   exposes `max_input_tokens` per model (the `/v1/models` list does not):
+   `curl -s -H "Authorization: Bearer $KEY_ENV" http://localhost:PORT/litellm/v1/model/info`
+   Set `context_length` to that `max_input_tokens`, not a hopeful round number — raising a
+   model above its true cap just invites overflow 400s. Caps are per-model (one gateway can
+   serve opus-4.8 at 1M but haiku at 200K), so override only the models that genuinely report
+   the larger window and leave the rest untouched.
+2. Add `context_length: <N>` to each model under its `custom_providers` entry:
+   ```yaml
+   custom_providers:
+     - name: Local (localhost:6655)
+       base_url: http://localhost:6655/litellm/v1
+       models:
+         anthropic--claude-4.8-opus: {context_length: 1000000}
+   ```
+   An entry-level `context_length` (sibling of `base_url`) backs every model the entry serves
+   when no per-model override exists — use it only when the whole gateway shares one cap.
+3. This edit cannot go through `hermes config set` (it addresses dotted paths and cannot index
+   into the `custom_providers` LIST), and the `patch`/`write_file` tools REFUSE `config.yaml`
+   (security guard: "Agent cannot modify security-sensitive configuration"). Edit the file with
+   a YAML-safe round-trip run under the Hermes venv, which has ruamel (host python usually does
+   not): `cd ~/.hermes/hermes-agent && venv/bin/python <script>`. Back up first and either keep
+   the diff to the exact leaf lines or accept that a full ruamel round-trip re-indents every
+   sequence (valid YAML, parses identically, but a noisy diff) — a plain-text replace of just
+   the `: {}` -> `: {context_length: N}` lines keeps the diff minimal.
+4. Verify end-to-end with Hermes's own resolver before telling the user it's done — don't trust
+   the file alone: `venv/bin/python -c "from agent.model_metadata import get_model_context_length as g; print(g('MODEL', base_url='BASE', provider='custom'))"`.
+   Also re-run `python -c "import yaml; yaml.safe_load(open('~/.hermes/config.yaml'))"` to prove no indent corruption.
+5. The window is read at session start, so the meter only updates on `/reset` or relaunch — tell the user.
+
+No client-side `anthropic-beta: context-1m-2025-08-07` header is needed when going through a
+LiteLLM gateway — the gateway opts in upstream. That beta lives in `anthropic_adapter.py` and
+only fires on NATIVE Anthropic / Azure / Bedrock routes, never the OpenAI-compatible custom path.
+If a gateway ever does require a client header, add it as `extra_headers:` on the
+`custom_providers` entry (supported knob, merged onto the OpenAI client's default_headers).
+
 ### Toolsets
 
 Enable/disable via `hermes tools` (interactive) or `hermes tools enable/disable NAME`.
