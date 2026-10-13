@@ -99,10 +99,12 @@ The synthesis agent returns a markdown handoff packet with these sections:
 | Key Findings | Bullet list; each finding cites subagent ID, file path, line number |
 | Decisions Required | Table: decision question, options, evidence, recommendation |
 | Blockers / Ambiguity | Table: which subagent is blocked, issue, what's needed |
-| Next-Action Plan | Table: step, action, target subagent type, tier, context needed |
+| Next-Action Plan | Table: step, THINK/EXECUTE action, target subagent type, tier, context needed |
 | Condensed Evidence | Compact snippets: test outputs, DOM dumps, file paths |
 
 The orchestrator reads ONLY this packet and nothing else from the subagent batch.
+
+THINK-type next actions must end in a verdict packet (references/hub-and-spoke-procedure.md §The Dispatch Gate) before any EXECUTE dispatch; EXECUTE rows must satisfy the straight-line brief checklist.
 
 ## Integration with Other Skills
 

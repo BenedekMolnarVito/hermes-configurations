@@ -173,6 +173,7 @@ replay, cheap) so report it in its own column, never summed into 'input'.
 
 ## Dispatch mechanics
 
+- Briefs are straight-line (synthesis-agent references/hub-and-spoke-procedure.md §The Dispatch Gate): exact paths/symbols, exact change, verify commands, done-format, stop conditions (assumption mismatch -> return BLOCKED with the mismatch; no improvising, no scope widening). If writing the brief needs exploration you haven't done, that's THINK work — do it at the controller or a deep child first and hand the implementer a verdict + recipe. Never dispatch 'figure out X and fix it'.
 - Large dispatch prompts time out the delegate_task stream. When a brief runs long (detailed
   multi-fix instructions, embedded code, long rulings), WRITE it to a file in the plan's workspace
   and send a SHORT dispatch prompt that says 'read <path> FIRST, it is authoritative' plus the
