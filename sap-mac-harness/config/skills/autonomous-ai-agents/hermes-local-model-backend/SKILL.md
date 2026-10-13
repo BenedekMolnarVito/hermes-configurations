@@ -38,7 +38,7 @@ skill / docs `user-guide/local-models`; this skill is the manual CLI/headless pa
    - `hermes config set model.base_url "<endpoint>/v1"` (see networking note for the host)
    - `hermes config set model.model "<model-name>"`
    - Ollama ignores the key but Hermes wants one present: put a dummy in `$HERMES_HOME/.env`
-     (e.g. `CUSTOM_API_KEY=ollama-local-dummy`) and `hermes config set model.api_key '${CUSTOM_API_KEY}'`.
+     (e.g. `CUSTOM_API_KEY=__SET_ME_ON_IMPORT__`) and `hermes config set model.api_key '${CUSTOM_API_KEY}'`.
 4. Set a generous timeout for slow local inference — it is an ENV VAR, not a config key:
    add `HERMES_API_TIMEOUT=1800` to `$HERMES_HOME/.env`.
 5. Verify end-to-end with a real call: `hermes chat -q "Reply in one sentence and name your model."`

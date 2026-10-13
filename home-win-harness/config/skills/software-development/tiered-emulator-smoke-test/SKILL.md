@@ -98,8 +98,8 @@ See references/treasury-scribe.md for files, commands and the 21-scenario notifi
 - PyYAML decodes JSON-style `\ud83c\udf7f` escapes into lone surrogates, and UTF-8 encoding
   then fails. Normalize loaded specs with
   `s.encode('utf-16','surrogatepass').decode('utf-16')`.
-- force-stop unbinds the listener. Record that it rebound, else BLOCKED (otherwise a restart
-  scenario passes vacuously).
+- force-stop unbinds the listener. Record that it rebound, else BLOCKED (otherwise a restart scenario passes vacuously).
+- Before debugging 'app UI not ready within timeout' in a CDP harness, verify all Python deps import from the venv (`$V -c 'import websockets, yaml; print("deps OK")'`). A missing lazy import (imported inside the eval function, not at module top) is silently swallowed by `try_js()`/`try_eval()` which catches Exception and returns `None` — so `wait_app_ready()` sees no DOM element and times out with a misleading UI-readiness error instead of ModuleNotFoundError. Always check imports first.
 
 ## Verification
 - `python -m unittest test_notif_runner` OK and `notif_runner.py --validate` VALID before dispatch.

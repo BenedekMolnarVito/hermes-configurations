@@ -119,10 +119,10 @@ new box, make sure these exist or adjust them:
 
 2. **Default provider is OpenRouter (cloud).** `config.yaml` uses
    `provider: openrouter` / `base_url: https://openrouter.ai/api/v1` for the
-   default model and **all** model tiers (`deep` = `meta/muse-spark-1.3-
-   contributor`, `quick` = `poolside/laguna-xs-2.1:free`, `moderate` =
-   `poolside/laguna-s-2.1:free`, `long-horizon-complex` = same as deep). The
-   `tier-router` plugin routes delegated subagents. There is **no** localhost
+   default model and **all** model tiers (default = `xiaomi/mimo-v2.6-pro`,
+   `deep` = `meta/muse-spark-1.3-contributor`, `quick` = `z-ai/glm-5.3-flash`,
+   `moderate` = `qwen/qwen3.8-flash`; delegation uses `qwen/qwen3.8-flash`).
+   The `tier-router` plugin routes delegated subagents. There is **no** localhost
    LiteLLM or Ollama dependency here (unlike the mac harness) — just set
    `OPENROUTER_API_KEY`.
 
@@ -222,7 +222,8 @@ grep -rn '__SET_ME_ON_IMPORT__' config/.env.template config/auth.json.template
 ```
 
 before committing, and run a token-prefix scan (`ghp_`, `xoxb-`, `hsk_`,
-`apikey_`, `3ee73eb9`, …) over the bundle to confirm no live secret value leaked.
+`apikey_`, plus your own machine-key prefixes — never a real one in docs, …)
+over the bundle to confirm no live secret value leaked.
 
 ---
 

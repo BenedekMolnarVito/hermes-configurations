@@ -97,7 +97,7 @@ from `$HERMES_HOME` (default `~/.hermes` on macOS/Linux,
    # and diff against the live files to confirm no real value leaked
    # also scan the bundle for real token prefixes — only comment/doc examples
    # or sha256: fingerprints should appear:
-   grep -rnE 'ghp_|xoxb-|xapp-|hsk_|apikey_|3ee73eb9|sk-or-v1-|sk-proj-' <folder>/config/ || true
+   grep -rnE 'ghp_|xoxb-|xapp-|hsk_|apikey_|sk-or-v1-|sk-proj-|<8-char-machine-key-prefix>' <folder>/config/ || true
    ```
 6. **Register it:** add a row to the table in the top-level `README.md`.
 

@@ -1,6 +1,6 @@
 ---
 name: bugfix-orchestrator
-description: Use when bugfix needs multi-agent workflow (branch, fix).
+description: Use when a bugfix or change request needs multi-agent workflow.
 ---
 # Bugfix Orchestrator Skill
 
@@ -34,6 +34,7 @@ This skill defines a repeatable, semi-deterministic workflow for executing bugfi
 - Delegate to android-webview-jev-testing skill subagent
 - Run Maestro smoke test on emulator; when the user offers a connected phone, run the same suite live on-device as a second pass — emulator proves repeatability, live device proves OS/OEM behavior.
 - Capture DOM dumps, screenshots, report.json
+- A smoke RED is a defect report, not a verdict to accept: return to Stage 3 with a rework subagent (brief carries the failing assertion, expected vs got, and suspected file:line), then re-run Stage 4 gates + the FULL smoke suite before committing. Never commit a fix whose on-device scenario is red.
 - **MANDATORY: Invoke synthesis-agent skill** to condense smoke test results
 
 ### Stage 6: Commit & PR
@@ -68,6 +69,8 @@ This skill defines a repeatable, semi-deterministic workflow for executing bugfi
   - long-horizon-complex: sustained multi-stage, cross-system work
 - **After EVERY subagent batch, invoke synthesis-agent skill** to produce handoff packet before next delegation decision
 - Synthesis is mandatory; on synthesis-dispatch infra failure, retry with backoff first (same raw summaries, same quick-tier dispatch). Only for a small batch (1–2 children) may the orchestrator condense directly from verified tool output, noting the skipped synthesis in the final report. On a large batch never skip synthesis by summarizing from memory — defer the batch decision and retry the synthesis dispatch later. Condensation must never deadlock the pipeline, but it also must never silently degrade on the batches that need it most.
+- Brief every child via a FILE: write the brief to a scratch/workspace path and dispatch a short 'read <path> first, authoritative' prompt — large inline dispatch prompts (~8K+ tokens) time out the delegation stream.
+- Keep a PROGRESS ledger file (stage checklist, subagent IDs, live-transcript paths, handoff packet paths) in the scratch dir; update it at every stage transition so the user can watch progress live.
 - Subagent contexts are ephemeral (discarded after report)
 - Failed-delegation recovery: on subagent infra failure (rate limit, provider error), treat the child as DEFERRED (transient), never FAILED. Salvage and condense the partial (transcript tail/grep, git status/diff) into a short summary. Backoff 10s, then re-dispatch a NEW subagent with the same file-based brief + the condensed partial summary attached so it resumes where the previous one 429-d; escalate the tier once (quick→moderate or moderate→deep) if the cheap pool stays congested. Max 3 retries. The orchestrator absorbs spoke work inline only for a single trivial leftover that was already keep-inline — never a whole task and never a review. A still-blocked child keeps its salvaged partial attached and is disclosed as DEFERRED in the final report.
 - Attribute gate failures by file ownership: typecheck/build errors in files outside `git diff --stat` are pre-existing — note them and move on, do not chase them as regressions.
@@ -102,3 +105,14 @@ Final PR URL + summary of changes + verification evidence
   on-device path is blocked; never fabricate on-device results.
 - Write a condensed handoff doc to `docs/<feature>_HANDOFF.md` when a session is
   interrupted or ends mid-task, so the next agent can resume without context loss.
+- Scroll/viewport capture across route swaps must read the offset BEFORE the swap's layout clamp: a passive useEffect cleanup can flush after the destination page's commit and save the clamped minimum (16 instead of 800). Capture at gesture time (before navigate) with a useLayoutEffect-cleanup fallback plus a precedence flag so the fallback never overwrites a fresher gesture capture. Mock-based jsdom tests cannot observe layout clamping — only an on-device scenario gate catches this class of bug.
+- When a fix touches scroll/viewport and the pre-fix app 'seems fine' on the emulator, A/B the fix against the pre-fix APK on-device anyway: Chrome WebView natively restores window scroll on same-document traversal (navigate(-1)) when content is tall at restoration time, so a wrong restore value actively REGRESSES versus pre-fix while looking like the fix 'should help'.
+- Scroll/viewport restoration across React route swaps: capture the offset at GESTURE
+  time (call a `captureScrollY()` before `navigate()` in the click handler) and restore
+  once per mount after rows render. A passive `useEffect` unmount cleanup reads
+  `window.scrollY` AFTER the new shorter route has committed and the browser clamped
+  the offset — it saves the clamped value (docH − viewport) and its restore then
+  clobbers Chrome's native same-document scroll restoration. Keep a `useLayoutEffect`
+  cleanup only as a fallback for non-gesture unmounts, behind a precedence flag so it
+  can never overwrite a fresher gesture capture. Mocked-scrollY unit tests cannot see
+  the layout race — the on-device scenario is the gate.

@@ -1,6 +1,6 @@
 # MANIFEST — home-win-harness
 
-Generated: 2026-10-11
+Generated: 2026-10-13
 Source host: Windows 11 (Hermes home `$HERMES_HOME` = `%USERPROFILE%\AppData\Local\hermes`)
 This folder: `home-win-harness/` (personal Windows-11 config; separate from `sap-mac-harness`)
 
@@ -27,9 +27,9 @@ skills/                skill catalog incl .archive (curator machinery pruned)
 
 ## Counts
 ```
-config files total : 537
-config total size  : 5,142,252 bytes (~4.9 MB)
-skills (SKILL.md)  : 112
+config files total : 536
+config total size  : 5,178,245 bytes (~4.9 MB)
+skills (SKILL.md)  : 114
 agent-hooks (.py)  : 13   (7 hooks + 6 in jevlib)
 cron jobs          : 0   (1 excluded — see Deviations)
 auth.json providers: 5   (sha256 fingerprints only: localhost:6655, copilot,
@@ -55,6 +55,11 @@ config.yaml    : removed the dead hook matcher `mcp__sap_jira__jira_create_issue
                   (targets SAP's internal Jira MCP, which is not configured here —
                   mcp_servers is empty). Reworded the header caveat that named it.
                   hook_jira_classify.py is retained in agent-hooks/ (unwired).
+secrets sweep  : live secret VALUES found outside the live `KEY=` lines were also
+                  replaced with `__SET_ME_ON_IMPORT__`: a commented duplicate of
+                  OPENCODE_ZEN_API_KEY inside .env, and the dummy CUSTOM_API_KEY
+                  example baked into skills/autonomous-ai-agents/hermes-local-model-backend/SKILL.md.
+                  Value-level leak scan over the whole bundle is clean.
 ```
 Everything else is an unmodified copy of the live `$HERMES_HOME` (secrets excepted).
 

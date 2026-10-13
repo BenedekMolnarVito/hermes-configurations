@@ -41,6 +41,18 @@ the loop. No pixels, no OCR, no screenshots-as-ground-truth.
 2. WEBVIEW SOCKET PID CHANGES. Socket is `webview_devtools_remote_<PID>` and
    the PID changes when the WebView respawns. RE-RESOLVE + re-forward on EVERY
    CDP call: `adb shell cat /proc/net/unix | grep -oE 'webview_devtools_remote_[0-9]+' | head -1`.
+2b. STALE LOCAL FORWARDS SILENTLY HIJACK TARGETS. An old `adb forward
+    tcp:9333` to the EMULATOR survives and the phone's forward to the same
+    local port never binds — all CDP traffic then hits the emulator while
+    every log claims the phone. Proven failure (UD1-UD6 'phone' run went to
+    the emulator). Fix: `adb forward --remove-all` (then re-add per device)
+    before EVERY run + VERIFY the bound target with a write-probe
+    (eval-set localStorage `zz-probe`, read back) AND a screen-size check
+    (emulator 412x892-class vs phone) before the first assert.
+2c. VERIFY RESTORES AT CONTENT LEVEL, never file bytes. Decoded sqlite rows
+    (python sqlite3 on the base64 blob) are ground truth: raw base64 file
+    bytes differ by encoding, and LevelDB files rewrite on open. Byte-diff of
+    `.b64`/leveldb files is a guaranteed false alarm.
 3. CDP `/json` may 404 (Host-header protection) but `/json/list` and
    `/json/version` work once forwarded to the right socket.
 4. Debug APK already exposes CDP. A release build needs
@@ -97,7 +109,10 @@ The user wants every emulator verification run this way, without being re-asked:
    packages, empty body, dedup, pending-queue path, prior-fix regressions).
 3. Elaborate suite -> plan it with a DEEP-tier planner subagent that derives
    expected outcomes from code (cite lines; ambiguous = flag UNSPECIFIED, never
-   invent). Then a moderate worker extends the harness/scenarios.yaml. Brief
+   invent). Then a moderate worker extends the harness/scenarios.yaml. The
+   EXECUTOR brief must carry every UNSPECIFIED as an explicit build-time code
+   lookup (const value, selector, window exposure, storage key) to resolve
+   BEFORE driving — never left for the executor to guess mid-run. Brief
    templates: templates/planner-brief.md, templates/runner-brief.md.
 4. EXECUTION goes to a QUICK/lowest-tier subagent: phrase the goal as simple
    verification ("run command, report pass/fail") so the router picks quick.
@@ -120,8 +135,22 @@ The user wants every emulator verification run this way, without being re-asked:
 - adb `input swipe` does NOT reliably trigger React swipe-to-delete handlers (they need a held drag). Prefer an in-DOM control or the repo/hook path over a synthetic swipe.
 - Synthetic drags against sensor-gated libraries (dnd-kit PointerSensor/TouchSensor with a `delay` activation constraint) NEVER activate when the whole pointerdown/move/up burst is dispatched synchronously in one JS evaluation — space it with real time: pointerdown, sleep longer than the delay, several incremental moves with sleeps, then pointerup. No hold means no activation, and the harness will report 'no change' forever.
 - When the app live-reorders during dragover (arrayMove on state), the dragged row ends up UNDER the pointer at drop, so a drop handler that treats `over.id === active.id` (or `over == null`) as 'no-op, skip persist' swallows nearly every real drop while the UI still shows the new order — a silent revert on next reload. The correct no-op test is snapshot comparison: record the id order on dragstart, persist on drop iff it differs. If on-device order never sticks but the DOM reorders and no errors surface, check this guard first.
-- After driving any mutation through the UI, assert at the STORAGE layer (pull the SQLite file and read the rows), not just the DOM — the DOM can show optimistic/local state (live-reorder, uncommitted writes) while the database never persisted, so a DOM-only assertion passes on a broken app. Pull BINARY-SAFE: `adb shell cat` mangles bytes (LF->CRLF), so use `adb shell run-as <pkg> base64 <db-path>` and decode locally, or `adb exec-out run-as <pkg> cat <db-path>`; always pull the `-wal`/`-shm` sidecars too and open them alongside the main file, or recent commits may be invisible.
+- Resetting a data-gated suite between scenarios with `location.reload()` re-boots the app at the PREVIOUS scenario's final URL — if that is `/edit/<old-id>` and the reset just wiped the DB, the missing txn crashes the React tree (no error boundary), and every later pushState nav is inert while `location.pathname` still looks right. Reset with a HARD full navigation to a safe route (`location.href = location.origin + '/'` after removeItem) so React reboots; assert page render (a known testid) after reset, not just the URL.
+- When no repo fn is exposed to `window` and the DB lives in WebView localStorage as base64 (e.g. `localStorage[key] = base64(sql.js db.export())`), do in-DB mutations (soft-delete, fixture rows) by pulling the base64, patching it with Python stdlib `sqlite3` (it opens sql.js exports directly), pushing the new base64 back, and reloading — a real storage-layer mutation; read it back afterwards as the persistence assert. Avoids unreliable swipe/confirm delete paths entirely.
+- After driving any mutation through the UI, assert at the STORAGE layer, not just the DOM — the DOM can show optimistic/local state (live-reorder, uncommitted writes) while the database never persisted, so a DOM-only assertion passes on a broken app. First derive WHERE the app actually persists (read its load/persist code): a NATIVE SQLite file → pull BINARY-SAFE (`adb shell cat` mangles bytes LF->CRLF, so `adb shell run-as <pkg> base64 <db-path>` decoded locally, or `adb exec-out run-as <pkg> cat`; always pull `-wal`/`-shm` sidecars too or recent commits may be invisible); a sql.js/WebView localStorage base64 DB → read the storage key back over CDP, there is no file to pull. If neither is reachable from the harness, fall back to a behavioral membership assert (e.g. list visibility, since list queries filter deleted rows) and say so in the report.
 - API 35+ redacts OTP-looking notification content (contiguous 4+ digits) for listeners lacking RECEIVE_SENSITIVE_NOTIFICATIONS: listener sees body "Sensitive notification content hidden". Use NBSP-grouped amounts in fixtures (real Revolut bodies group thousands with NBSP, so "4 500 Ft" is immune; only unusual ungrouped formats like "4500 Ft" trip the redactor). Decision: DROP unrecoverable redacted payloads, never persist junk amount-null rows — a redacted body never carries a usable merchant/amount, and persisting it would both show a "Sensitive notification content hidden" transaction to the user and pollute auto-tag learning. Guard in BOTH layers — the ingestion layer returns null before any dedup/auto-tag/dedup-window logic can observe it (TS IngestionService ingestNotification step 0 + RevolutNotificationService.toNotificationData early return) — and assert 0 rows + empty-state in the scenario. Flagging-only is wrong: a flagged-but-persisted redacted row is still a fake transaction the user would edit/delete. RECEIVE_SENSITIVE_NOTIFICATIONS is signature/role-level and cannot be held by a Play-store app, so requesting it is a dead end (and a policy risk) — do not pursue it.
+- An attached AVD may be HEADLESS (`qemu-system-*-headless`): no emulator window exists. Judge liveness by `adb devices` + process list, not a visible window — when the user reports "emulator not up", say it is headless instead of restarting the AVD mid-run.
+- PROGRESS VISIBILITY (user preference, deterministic suites): the runner must
+  emit one `PROGRESS i/N — <scenario> — PASS/FAIL` line per completed scenario
+  AND append the same line to `<out_dir>/PROGRESS` so `tail PROGRESS` / `ls |
+  wc -l` shows X/N at a glance; write each scenario's DOM dump as it completes
+  (never batch dumps to the end) so the out dir is a live progress ledger.
+  Once a harness is proven stable, RUN the suite as a background TERMINAL
+  process with `heartbeat=60` or `notify=['PROGRESS']` so the user receives
+  live progress notifications; dispatch a subagent only while the harness may
+  still need repair. The delegation live transcript
+  (`<hermes>/cache/delegation/live/<deleg_id>/task-0.log`) is a tail-able
+  progress view for any subagent — give the user the path.
 - Keep a scratchpad at .maestro/SMOKE_SCRATCHPAD.md and dumps/report under .maestro/smoke_out/.
 
 ## Toolchain setup on a managed Mac (no admin/sudo)
@@ -137,3 +166,35 @@ The user wants every emulator verification run this way, without being re-asked:
   `android:run` may hardcode Windows gradlew.bat -> use `./gradlew`.
 - Installed package id = android `namespace`, which can differ from Capacitor
   `appId` (here `com.treasuryscribe.app` vs `com.vitobudget.tracker`).
+- PIN CDP TO THE APP PID. Other apps' WebViews keep stale
+  `webview_devtools_remote_<pid>` sockets on a busy AVD; resolving the FIRST socket
+  silently attaches the whole oracle to the wrong app (proven: reads came from a leaked
+  treasury-scribe WebView, scenarios even PASSED on it). Resolve
+  `adb shell pidof <pkg>` and accept ONLY the socket with that exact PID; if pidof is
+  empty, retry/fail — never fall back to "some" socket.
+- cmd.exe (Windows host `subprocess(shell=True)`) + POSIX redirects: `adb shell am
+  start ... >/dev/null 2>&1` SILENTLY no-ops the WHOLE command (cmd can't open
+  /dev/null). Strip redirects from every adb string that may run under cmd; the
+  wrapper captures output anyway. Same bug hid `pm clear`, so a frozen backgrounded
+  WebView with a zombie devtools socket survived across runs.
+- Right after pm clear/cold start the devtools socket is LISTED in /proc/net/unix
+  BEFORE its HTTP endpoint answers — curl /json/list returns empty. live_ws needs a
+  bounded retry loop (re-resolving the app PID each attempt), not a single shot.
+- Windows git-bash: `python3` on PATH is often the WindowsApps stub; a shim exec'ing
+  the native python must `cygpath -w` absolute args — native python cannot open
+  `/c/...` paths that bash scripts pass.
+- PRE-FIX NEGATIVE CONTROL (every on-device bugfix, not just scroll): when the bug is
+  user-reported device behavior, also run the new scenarios against a PRE-FIX APK and
+  report it honestly. It distinguishes 'fix ineffective' from 'the platform already
+  masks the bug in some environments' (so the fix must not regress what native
+  behavior provided) and catches fixes that make behavior WORSE. Also verify what is
+  actually installed before trusting any verdict: unzip the APK and grep
+  assets/public JS for the fix's code shape — a stale install invalidates every result.
+- Scroll/viewport scenarios on Capacitor WebView: Chrome RESTORES window scroll on
+  same-document traversals (history.back / navigate(-1)) when the document stays tall
+  (warm DB + rows back before restoration = no loading clamp), so such a scenario can
+  PASS on the pre-fix bundle — see the negative-control rule. PITFALL (passive-effect
+  trap): a `useEffect` unmount cleanup that READS `window.scrollY` runs after the new
+  route's shorter page has committed — the offset is ALREADY CLAMPED (docH −
+  viewport), so the hook saves the clamped value and its restore then preempts the
+  native one; mocked-scrollY unit tests cannot see this layout race.

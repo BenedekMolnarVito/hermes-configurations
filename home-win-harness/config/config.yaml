@@ -21,6 +21,7 @@
 #      cloud provider + key. NOT OS-specific, but environment-specific.
 #   4. mcp_servers is empty (no MCP servers configured here). Add your own on
 #      import; OAuth-bearing servers re-authenticate on first use on Windows.
+
 #   5. memory.provider: hindsight -> needs the hindsight plugin + its env vars
 #      (HINDSIGHT_API_URL / _API_KEY / _BANK_ID) present in .env. Ported.
 #
@@ -29,7 +30,7 @@
 # Save as UTF-8 WITHOUT BOM, or let `hermes config edit` write it.
 # ======================================================================
 model:
-  default: meta/muse-spark-1.3-contributor
+  default: xiaomi/mimo-v2.6-pro
   provider: openrouter
   base_url: https://openrouter.ai/api/v1
   aliases:
@@ -37,13 +38,10 @@ model:
       model: meta/muse-spark-1.3-contributor
       provider: openrouter
     quick:
-      model: poolside/laguna-xs-2.1:free
-      provider: openrouter
-    long-horizon-complex:
-      model: meta/muse-spark-1.3-contributor
+      model: z-ai/glm-5.3-flash
       provider: openrouter
     moderate:
-      model: poolside/laguna-s-2.1:free
+      model: qwen/qwen3.8-flash
       provider: openrouter
   # aliases:
   #   deep:
@@ -75,12 +73,14 @@ display:
 memory:
   provider: hindsight
 delegation:
-  model: poolside/laguna-s-2.1:free
+  model: qwen/qwen3.8-flash
   provider: openrouter
-  reasoning_effort: minimal
+  reasoning_effort: high
 command_allowlist:
   - command parser limit or malformed executable payload
   - delete in root path
+  - git force push (rewrites remote history)
+  - overwrite project env/config file
   - recursive delete
   - script execution via -e/-c flag
   - script execution via heredoc

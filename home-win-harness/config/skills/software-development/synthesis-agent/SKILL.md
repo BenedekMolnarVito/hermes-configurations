@@ -44,7 +44,7 @@ Orchestrator (hub, main session)
 
 ### Key Principles
 
-1. **Hub gating:** No subagent result enters the orchestrator's reasoning without passing through synthesis first.
+1. **Hub gating:** No subagent result enters the orchestrator's reasoning without passing through synthesis first (small-batch exception in Enforcement Rules).
 2. **Ephemeral subagents:** Spokes have fresh, isolated context. Their raw reports are discarded after synthesis.
 3. **Factual extraction only:** The synthesis agent extracts and condenses; it does not re-interpret or embellish.
 4. **Contradiction surfacing:** If two subagents disagree, the synthesis agent flags it explicitly in the handoff packet.
@@ -115,7 +115,7 @@ The orchestrator reads ONLY this packet and nothing else from the subagent batch
 
 These are hard invariants the orchestrator (you) must enforce:
 
-1. **No bypass:** After a delegate_task batch, the very next delegate_task MUST be a synthesis-agent call. No acting on raw summaries.
+1. **No bypass on real batches:** After a delegate_task batch, the very next delegate_task MUST be a synthesis-agent call; no acting on raw summaries. Exception — a small batch (1–2 children) whose short raw reports are already in hand may be condensed by the orchestrator directly from verified tool output (a synthesis child costs more than it saves); write the packet in the standard sections yourself and note the skipped synthesis dispatch in the final report. Any larger batch never bypasses synthesis.
 2. **Fresh context:** The synthesis agent gets the raw summaries as context, not the full conversation history.
 3. **Discard raw reports:** After synthesis, remove raw subagent summaries from main context (or reference them from a scratch file only).
 4. **Decision logging:** When the orchestrator makes a decision from the handoff packet, note which section of which packet informed it.

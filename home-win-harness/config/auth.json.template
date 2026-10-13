@@ -2,7 +2,7 @@
   "version": 1,
   "providers": {},
   "active_provider": null,
-  "updated_at": "2026-10-11T21:36:36.664805+00:00",
+  "updated_at": "2026-10-12T14:31:17.245213+00:00",
   "credential_pool": {
     "custom:local-(localhost:6655)": [
       {
@@ -49,11 +49,11 @@
         "auth_type": "api_key",
         "priority": 0,
         "source": "env:OPENROUTER_API_KEY",
-        "last_status": "exhausted",
-        "last_status_at": 1791754596.6565728,
-        "last_error_code": 429,
+        "last_status": "ok",
+        "last_status_at": null,
+        "last_error_code": null,
         "last_error_reason": null,
-        "last_error_message": "Provider returned error",
+        "last_error_message": null,
         "last_error_reset_at": null,
         "base_url": "https://openrouter.ai/api/v1",
         "request_count": 6,
