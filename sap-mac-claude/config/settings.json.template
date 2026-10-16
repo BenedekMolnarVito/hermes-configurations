@@ -1,0 +1,190 @@
+{
+  "env": {
+    "ANTHROPIC_AUTH_TOKEN": "__SET_ME_ON_IMPORT__",
+    "ANTHROPIC_BASE_URL": "http://localhost:6655/anthropic/",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-haiku-4-5",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-4-8",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-4-6",
+    "ANTHROPIC_MODEL": "claude-sonnet-4-6",
+    "CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS": "1",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
+    "CLAUDE_CODE_TOTAL_TOKENS_REMINDER": "off",
+    "DISABLE_ERROR_REPORTING": "1",
+    "DISABLE_TELEMETRY": "1",
+    "ENABLE_TOOL_SEARCH": "auto",
+    "JIRA_PERSONAL_TOKEN": "__SET_ME_ON_IMPORT__",
+    "JIRA_URL": "https://jira.tools.sap",
+    "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT": "http://localhost:6655/otel/v1/metrics",
+    "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
+    "OTEL_METRICS_EXPORTER": "otlp",
+    "TYPESAFE_API_KEY": "__SET_ME_ON_IMPORT__",
+    "HERMES_HOME": "/Users/C5418860/.hermes"
+  },
+  "includeCoAuthoredBy": false,
+  "permissions": {
+    "allow": [
+      "Read(//Users/C5418860/Library/Application Support/Code/logs/20260612T142237/window1/exthost/ms-vscode-remote.remote-containers/**)",
+      "Bash(npm run *)",
+      "Bash(npm --version)",
+      "Read(//Users/C5418860/**)",
+      "Bash(command -v nvm)",
+      "Read(//opt/homebrew/opt/**)",
+      "Bash(node -e \"console.log\\(typeof Temporal\\)\")",
+      "Bash(brew list *)",
+      "Bash(brew --prefix)",
+      "Read(//opt/homebrew/Cellar/node/26.3.0/bin/**)",
+      "Bash(brew unlink *)",
+      "Bash(brew install *)",
+      "Bash(brew link *)",
+      "Bash(npm install *)",
+      "Bash(cds --version)",
+      "Bash(lsof -nP -iTCP:5000 -sTCP:LISTEN)",
+      "Bash(cf target *)",
+      "Bash(gh api *)",
+      "Bash(which gh; ls ~/.local/bin/gh /usr/local/bin/gh /opt/homebrew/bin/gh 2>&1; echo \"---\"; type gh 2>&1)",
+      "Read(//usr/local/bin/**)",
+      "Bash(env)",
+      "WebFetch(domain:github.tools.sap)",
+      "Bash(brew --version)",
+      "Bash(/opt/homebrew/bin/gh --version)",
+      "Bash(/opt/homebrew/bin/gh auth *)",
+      "Bash(/opt/homebrew/bin/gh api *)",
+      "Bash(echo \"exit=$?\")",
+      "Read(//tmp/**)",
+      "Bash(/opt/homebrew/bin/gh api --hostname github.tools.sap \"/repos/cfa-ai-incubation/cfa-agentic-hub/dependabot/alerts?state=open&per_page=100\" --jq '[.[] | {n: .number, sev: .security_advisory.severity, cvss: .security_advisory.cvss.score, pkg: .dependency.package.name, eco: .dependency.package.ecosystem, manifest: .dependency.manifest_path, scope: .dependency.scope, summary: .security_advisory.summary, ghsa: .security_advisory.ghsa_id, cve: .security_advisory.cve_id, fix: \\(.security_advisory.vulnerabilities[0].first_patched_version.identifier // null\\), vuln_range: .security_advisory.vulnerabilities[0].vulnerable_version_range}] | sort_by\\(-.cvss\\)' > /tmp/alerts-summary.json *)",
+      "Bash(node -e \"const l=require\\('./approuter/package-lock.json'\\); console.log\\('lockfile version:', l.lockfileVersion\\); console.log\\('top-level deps:', Object.keys\\(l.packages[''].dependencies||{}\\)\\)\")",
+      "Bash(node -e \"const l=require\\('./approuter/package-lock.json'\\); console.log\\(l.packages['node_modules/@sap/approuter'].version\\)\")",
+      "Bash(node -e \"const l=require\\('./db/package-lock.json'\\); console.log\\(l.packages['node_modules/@sap/hdi-deploy'].version\\)\")",
+      "Bash(node -e \"const l=require\\('./db/package-lock.json'\\); for \\(const k of Object.keys\\(l.packages\\)\\) if \\(k.includes\\('handlebars'\\)||k.includes\\('picomatch'\\)||k.includes\\('micromatch'\\)||k.includes\\('hana-client'\\)\\) console.log\\(k,'->',l.packages[k].version\\)\")",
+      "Bash(node -e \"const l=require\\('./backend/package-lock.json'\\); for \\(const k of Object.keys\\(l.packages\\)\\) if \\(k.includes\\('esbuild'\\)\\) console.log\\(k,'->',l.packages[k].version\\)\")",
+      "Bash(node -e ' *)",
+      "Bash(npm view *)",
+      "Bash(node -e \"const l=require\\('./approuter/package-lock.json'\\); for \\(const [k,v] of Object.entries\\(l.packages\\)\\) if \\(k.includes\\('follow-redirects'\\)\\) console.log\\(k,'v=',v.version\\)\")",
+      "Bash(node -e \"const l=require\\('./approuter/package-lock.json'\\); for \\(const [k,v] of Object.entries\\(l.packages\\)\\) if \\(k.endsWith\\('/axios'\\)\\) console.log\\(k,'v=',v.version\\)\")",
+      "Bash(node -e \"const lock = require\\('./package-lock.json'\\); const ws = lock.packages['node_modules/ws']; console.log\\(JSON.stringify\\(ws, null, 2\\)\\)\")",
+      "Bash(node -e \"const lock=require\\('./package-lock.json'\\); const who=Object.entries\\(lock.packages\\).filter\\(\\([k,v]\\)=>v.dependencies?.ws || v.devDependencies?.ws\\).map\\(\\([k,v]\\)=>\\({pkg:k, ws: \\(v.dependencies||{}\\).ws||\\(v.devDependencies||{}\\).ws}\\)\\); console.log\\(JSON.stringify\\(who,null,2\\)\\)\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({**d.get\\('dependencies',{}\\), **d.get\\('devDependencies',{}\\)}, indent=2\\)\\)\")",
+      "Bash(node -e \"const lock=require\\('./package-lock.json'\\); const sapAr = lock.packages['node_modules/@sap/approuter']; console.log\\('version:', sapAr.version\\); console.log\\('ws dep:', sapAr.dependencies?.ws\\)\")",
+      "Bash(npm show *)",
+      "Bash(python3 -c \"import json,sys; vs=json.load\\(sys.stdin\\); print\\('\\\\n'.join\\(vs[-10:]\\)\\)\")",
+      "Bash(node -e \"const lock=require\\('./package-lock.json'\\); const ws=lock.packages['node_modules/ws']; console.log\\('ws resolved to:', ws?.version\\)\")",
+      "Bash(xxd)",
+      "Bash(bash -c ' *)"
+    ],
+    "additionalDirectories": [
+      "/tmp"
+    ]
+  },
+  "model": "opus",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/agent-hooks/hook_delegate_route.py",
+            "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/agent-hooks/hook_batch_guard_cc.py",
+            "timeout": 15
+          }
+        ]
+      },
+      {
+        "matcher": "Read|WebFetch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/agent-hooks/hook_bulk_io_guard.py",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/agent-hooks/hook_citation_guard.py",
+            "timeout": 20
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__jira__create_issue",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/agent-hooks/hook_jira_classify_cc.py",
+            "timeout": 20
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/agent-hooks/hook_caveman_report_cc.py",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/agent-hooks/hook_skill_route_cc.py",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "chrome-devtools-mcp@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true,
+    "pr-review-toolkit@claude-plugins-official": true,
+    "skill-creator@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true,
+    "aifgp-plugin-cpit-ai-coe-global-marketplace@agent-asset-registry": true,
+    "typesafe@typesafe-ai": true
+  },
+  "extraKnownMarketplaces": {
+    "agent-asset-registry": {
+      "source": {
+        "source": "git",
+        "url": "https://github.tools.sap/CPITAICoE/agent-asset-registry.git"
+      }
+    },
+    "typesafe-ai": {
+      "source": {
+        "source": "github",
+        "repo": "typesafe-ai/skills"
+      }
+    }
+  },
+  "alwaysThinkingEnabled": false,
+  "effortLevel": "medium",
+  "gitAttribution": false,
+  "mcpServers": {
+    "jira": {
+      "args": [
+        "mcp-atlassian"
+      ],
+      "command": "uvx",
+      "env": {
+        "JIRA_PERSONAL_TOKEN": "__SET_ME_ON_IMPORT__",
+        "JIRA_URL": "https://jira.tools.sap"
+      }
+    }
+  }
+}

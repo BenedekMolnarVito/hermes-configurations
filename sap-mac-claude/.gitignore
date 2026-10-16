@@ -1,0 +1,21 @@
+# sap-mac-claude — never commit live secrets or machine-local runtime state.
+# Only the *.template files and redacted config belong in git.
+
+# Live secret-bearing files (import side produces these from the .template files)
+config/settings.json
+config/settings.local.json
+
+# Common secret filename patterns, just in case
+*.secret
+*.key
+*.pem
+.env
+
+# Importer backups
+*.bak-*
+
+# OS / editor noise
+.DS_Store
+**/__pycache__/
+*.pyc
+*.swp

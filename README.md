@@ -1,9 +1,11 @@
 # hermes-configurations
 
-A registry of **Hermes Agent harness configurations** — one self-contained folder
-per config. Each folder is an importable, redacted export of a full Hermes install
+A registry of **AI-agent harness configurations** — one self-contained folder
+per config. Each folder is an importable, redacted export of a full agent install
 (config, persona, memory, skills, agent-hooks, cron, MCP wiring) that can be dropped
-onto a new machine and brought up with its own importer.
+onto a new machine and brought up with its own importer. Most folders export
+**Hermes Agent**; `sap-mac-claude/` exports **Claude Code** (same export/import
+discipline, different tool and home directory).
 
 Folders are **independent**: a config folder copies nothing from a sibling and
 touching one never affects another. They must be imported into **separate**
@@ -16,6 +18,7 @@ touching one never affects another. They must be imported into **separate**
 |---|---|---|
 | [`sap-mac-harness/`](./sap-mac-harness) | macOS | SAP/FAA workstation; localhost LiteLLM + Ollama, hindsight memory, superpowers, jev hooks |
 | [`home-win-harness/`](./home-win-harness) | Windows 11 | Personal config; cloud OpenRouter (tier-router), hindsight memory, jev hooks; no local services. Separate from sap-mac-harness (see "Config isolation"). |
+| [`sap-mac-claude/`](./sap-mac-claude) | macOS | **Claude Code** (not Hermes); localhost gateway on `:6655`, 7 agent-hooks + jevlib, 60 skills, superpowers/typesafe/jev plugins, Jira MCP. Imports into `~/.claude`, not `$HERMES_HOME`. |
 
 > Add a row here when you add a new config folder.
 
@@ -38,7 +41,7 @@ In short:
    MCP auth) and, for a different OS, the cross-OS caveats in CONTRIBUTING.md.
 6. Add a row to the table above.
 
-This repo now contains two self-contained configs (`sap-mac-harness` and
-`home-win-harness`), each a complete, independent export. See
-CONTRIBUTING.md to add another — configs must never be merged into one
-`$HERMES_HOME` (see "Config isolation").
+This repo now contains three self-contained configs (`sap-mac-harness`,
+`home-win-harness`, and the Claude Code `sap-mac-claude`), each a complete,
+independent export. See CONTRIBUTING.md to add another — configs must never be
+merged into one agent home (see "Config isolation").
