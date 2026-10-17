@@ -1,0 +1,51 @@
+{
+  "version": 2,
+  "plugins": {
+    "superpowers@claude-plugins-official": [
+      {
+        "scope": "user",
+        "version": "5.1.0",
+        "gitCommitSha": "6fd4507659784c351abbd2bc264c7162cfd386dc"
+      }
+    ],
+    "code-review@claude-plugins-official": [
+      {
+        "scope": "user",
+        "version": "unknown"
+      }
+    ],
+    "skill-creator@claude-plugins-official": [
+      {
+        "scope": "user",
+        "version": "unknown"
+      }
+    ],
+    "pr-review-toolkit@claude-plugins-official": [
+      {
+        "scope": "user",
+        "version": "unknown"
+      }
+    ],
+    "chrome-devtools-mcp@claude-plugins-official": [
+      {
+        "scope": "user",
+        "version": "1.2.0",
+        "gitCommitSha": "228cf3936ad99d9e0c09b43d77fbbac8712f2357"
+      }
+    ],
+    "aifgp-plugin-cpit-ai-coe-global-marketplace@agent-asset-registry": [
+      {
+        "scope": "user",
+        "version": "1.6.0",
+        "gitCommitSha": "288c3d1b551fe7c5bde5f58ef2b6da52210fa87e"
+      }
+    ],
+    "typesafe@typesafe-ai": [
+      {
+        "scope": "user",
+        "version": "0.5.7",
+        "gitCommitSha": "65a39f393687675ce170e6094757de20370365b9"
+      }
+    ]
+  }
+}

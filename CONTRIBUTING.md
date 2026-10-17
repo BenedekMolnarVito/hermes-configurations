@@ -14,7 +14,7 @@ machine.
 ## 1. Golden rules (apply to every folder)
 
 1. **One folder per config, fully isolated.** Name it `<org>-<os>-<purpose>`
-   (e.g. `sap-win-harness`, `home-linux-harness`, `sap-mac-harness`). A folder
+   (e.g. `sap-win-hermes`, `home-linux-hermes`, `sap-mac-hermes`). A folder
    must reference and copy only files inside itself.
 2. **Never commit live secrets.** No real `.env`, no real `auth.json`, no tokens
    or keys anywhere. Secrets are stripped into `*.template` files with
@@ -24,7 +24,7 @@ machine.
    cron run-history (`executions.db`), the `hermes-agent` codebase, and the skills
    curator machinery.
 4. **Each folder is independently importable** with its own `README.md`,
-   `MANIFEST.md`, `install.sh`, and `.gitignore`. Use `sap-mac-harness/` as the
+   `MANIFEST.md`, `install.sh`, and `.gitignore`. Use `sap-mac-hermes/` as the
    reference template — copy its structure and adapt.
 5. **Document machine-local assumptions.** Any endpoint, path, plugin, or service
    the config depends on must be spelled out in that folder's README so an
@@ -76,7 +76,7 @@ from `$HERMES_HOME` (default `~/.hermes` on macOS/Linux,
    - `skills/` excluding `.curator_backups/`, `.curator_ledger.jsonl`,
      `.curator_state`, `.bundled_manifest`, `.locks/`, `.hub/`, `__pycache__/`,
      `.usage.json`(+`.lock`), `.DS_Store`. Keep `.archive/`.
-   (The "Maintaining this export" section of `sap-mac-harness/README.md` has the
+   (The "Maintaining this export" section of `sap-mac-hermes/README.md` has the
    exact `rsync` commands — reuse them.)
 3. **Redact secrets:**
    - `config/.env.template`: strip every secret VALUE (anything whose key matches
@@ -87,7 +87,7 @@ from `$HERMES_HOME` (default `~/.hermes` on macOS/Linux,
      values with `__SET_ME_ON_IMPORT__` (fingerprints like `sha256:...` are
      non-reversible and may stay).
 4. **Add the four support files** (`README.md`, `MANIFEST.md`, `install.sh`,
-   `.gitignore`) by copying `sap-mac-harness/`'s and adapting the names, the
+   `.gitignore`) by copying `sap-mac-hermes/`'s and adapting the names, the
    secret list, and the machine-local section.
 5. **Run the secret-leak gate** before committing — no full live `.env`/`auth.json`
    value may appear anywhere in the folder:
@@ -151,8 +151,8 @@ mergeable, and importing two of them into the same `$HERMES_HOME` will
 overwrite one with the other:
 
 - **Different secrets.** Each config redacts its own `.env` secret set (which
-  varies per machine — e.g. `home-win-harness` redacts 10 keys vs.
-  `sap-mac-harness`'s 5). Never copy a live `.env`/`auth.json` between folders.
+  varies per machine — e.g. `home-win-hermes` redacts 10 keys vs.
+  `sap-mac-hermes`'s 5). Never copy a live `.env`/`auth.json` between folders.
 - **Different provider auth.** `auth.json` holds per-machine provider
   credentials (sha256 fingerprints only here); OAuth tokens do not transfer.
   Importing config B over config A's live home leaves A's live `.env`/`auth.json`

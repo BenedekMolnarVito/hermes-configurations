@@ -1,0 +1,20 @@
+{
+  "claude-plugins-official": {
+    "source": {
+      "source": "github",
+      "repo": "anthropics/claude-plugins-official"
+    }
+  },
+  "agent-asset-registry": {
+    "source": {
+      "source": "git",
+      "url": "https://github.tools.sap/CPITAICoE/agent-asset-registry.git"
+    }
+  },
+  "typesafe-ai": {
+    "source": {
+      "source": "github",
+      "repo": "typesafe-ai/skills"
+    }
+  }
+}

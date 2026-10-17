@@ -1,0 +1,466 @@
+---
+name: github-pr-workflow
+description: "Use when AUTHORING a PR: branch, commit, push, open the PR, watch CI, merge. (Reviewing someone else's PR -> github-code-review.)"
+version: 1.1.0
+author: Hermes Agent
+license: MIT
+platforms: [linux, macos, windows]
+metadata:
+  hermes:
+    tags: [GitHub, Pull-Requests, CI/CD, Git, Automation, Merge]
+    related_skills: [github-auth, github-code-review]
+---
+
+# GitHub Pull Request Workflow
+
+Complete guide for managing the PR lifecycle. Each section shows the `gh` way first, then the `git` + `curl` fallback for machines without `gh`.
+
+## Prerequisites
+
+- Authenticated with GitHub (see `github-auth` skill)
+- Inside a git repository with a GitHub remote
+
+### Quick Auth Detection
+
+```bash
+# Determine which method to use throughout this workflow
+if command -v gh &>/dev/null && gh auth status &>/dev/null; then
+  AUTH="gh"
+else
+  AUTH="git"
+  # Ensure we have a token for API calls
+  if [ -z "$GITHUB_TOKEN" ]; then
+    if _hermes_env="${HERMES_HOME:-$HOME/.hermes}/.env"; [ -f "$_hermes_env" ] && grep -q "^GITHUB_TOKEN=" "$_hermes_env"; then
+      GITHUB_TOKEN=$(grep "^GITHUB_TOKEN=" "$_hermes_env" | head -1 | cut -d= -f2 | tr -d '\n\r')
+    elif grep -q "github.com" ~/.git-credentials 2>/dev/null; then
+      GITHUB_TOKEN=$(uv run python "${HERMES_HOME:-$HOME/.hermes}/skills/github/github-auth/scripts/git-credential-token.py")
+    fi
+  fi
+fi
+echo "Using: $AUTH"
+```
+
+### Extracting Owner/Repo from the Git Remote
+
+Many `curl` commands need `owner/repo`. Extract it from the git remote:
+
+```bash
+# Works for both HTTPS and SSH remote URLs
+REMOTE_URL=$(git remote get-url origin)
+OWNER_REPO=$(echo "$REMOTE_URL" | sed -E 's|.*github\.com[:/]||; s|\.git$||')
+OWNER=$(echo "$OWNER_REPO" | cut -d/ -f1)
+REPO=$(echo "$OWNER_REPO" | cut -d/ -f2)
+echo "Owner: $OWNER, Repo: $REPO"
+```
+
+---
+
+## 1. Branch Creation
+
+This part is pure `git` — identical either way:
+
+```bash
+# Make sure you're up to date
+git fetch origin
+git checkout main && git pull origin main
+
+# Create and switch to a new branch
+git checkout -b feat/add-user-authentication
+```
+
+Branch naming conventions:
+- `feat/description` — new features
+- `fix/description` — bug fixes
+- `refactor/description` — code restructuring
+- `docs/description` — documentation
+- `ci/description` — CI/CD changes
+
+## 2. Making Commits
+
+Use the agent's file tools (`write_file`, `patch`) to make changes, then commit:
+
+```bash
+# Stage specific files
+git add src/auth.py src/models/user.py tests/test_auth.py
+
+# Commit with a conventional commit message
+git commit -m "feat: add JWT-based user authentication
+
+- Add login/register endpoints
+- Add User model with password hashing
+- Add auth middleware for protected routes
+- Add unit tests for auth flow"
+```
+
+Commit message format (Conventional Commits):
+```
+type(scope): short description
+
+Longer explanation if needed. Wrap at 72 characters.
+```
+
+Types: `feat`, `fix`, `refactor`, `docs`, `test`, `ci`, `chore`, `perf`
+
+## 3. Pushing and Creating a PR
+
+### Push the Branch (same either way)
+
+```bash
+git push -u origin HEAD
+```
+
+### Create the PR
+
+**With gh:**
+
+```bash
+gh pr create \
+  --title "feat: add JWT-based user authentication" \
+  --body "## Summary
+- Adds login and register API endpoints
+- JWT token generation and validation
+
+## Test Plan
+- [ ] Unit tests pass
+
+Closes #42"
+```
+
+Options: `--draft`, `--reviewer user1,user2`, `--label "enhancement"`, `--base develop`
+
+**With git + curl:**
+
+```bash
+BRANCH=$(git branch --show-current)
+
+curl -s -X POST \
+  -H "Authorization: token $GITHUB_TOKEN" \
+  -H "Accept: application/vnd.github.v3+json" \
+  https://api.github.com/repos/$OWNER/$REPO/pulls \
+  -d "{
+    \"title\": \"feat: add JWT-based user authentication\",
+    \"body\": \"## Summary\nAdds login and register API endpoints.\n\nCloses #42\",
+    \"head\": \"$BRANCH\",
+    \"base\": \"main\"
+  }"
+```
+
+The response JSON includes the PR `number` — save it for later commands.
+
+To create as a draft, add `"draft": true` to the JSON body.
+
+## 4. Monitoring CI Status
+
+### Check CI Status
+
+**With gh:**
+
+```bash
+# One-shot check
+gh pr checks
+
+# Watch until all checks finish (polls every 10s)
+gh pr checks --watch
+```
+
+**With git + curl:**
+
+```bash
+# Get the latest commit SHA on the current branch
+SHA=$(git rev-parse HEAD)
+
+# Query the combined status
+curl -s \
+  -H "Authorization: token $GITHUB_TOKEN" \
+  https://api.github.com/repos/$OWNER/$REPO/commits/$SHA/status \
+  | python -c "
+import sys, json
+data = json.load(sys.stdin)
+print(f\"Overall: {data['state']}\")
+for s in data.get('statuses', []):
+    print(f\"  {s['context']}: {s['state']} - {s.get('description', '')}\")"
+
+# Also check GitHub Actions check runs (separate endpoint)
+curl -s \
+  -H "Authorization: token $GITHUB_TOKEN" \
+  https://api.github.com/repos/$OWNER/$REPO/commits/$SHA/check-runs \
+  | python -c "
+import sys, json
+data = json.load(sys.stdin)
+for cr in data.get('check_runs', []):
+    print(f\"  {cr['name']}: {cr['status']} / {cr['conclusion'] or 'pending'}\")"
+```
+
+### Poll Until Complete (git + curl)
+
+```bash
+# Simple polling loop — check every 30 seconds, up to 10 minutes
+SHA=$(git rev-parse HEAD)
+for i in $(seq 1 20); do
+  STATUS=$(curl -s \
+    -H "Authorization: token $GITHUB_TOKEN" \
+    https://api.github.com/repos/$OWNER/$REPO/commits/$SHA/status \
+    | python -c "import sys,json; print(json.load(sys.stdin)['state'])")
+  echo "Check $i: $STATUS"
+  if [ "$STATUS" = "success" ] || [ "$STATUS" = "failure" ] || [ "$STATUS" = "error" ]; then
+    break
+  fi
+  sleep 30
+done
+```
+
+## 5. Auto-Fixing CI Failures
+
+When CI fails, diagnose and fix. This loop works with either auth method.
+
+### Step 1: Get Failure Details
+
+**With gh:**
+
+```bash
+# List recent workflow runs on this branch
+gh run list --branch $(git branch --show-current) --limit 5
+
+# View failed logs
+gh run view <RUN_ID> --log-failed
+```
+
+**With git + curl:**
+
+```bash
+BRANCH=$(git branch --show-current)
+
+# List workflow runs on this branch
+curl -s \
+  -H "Authorization: token $GITHUB_TOKEN" \
+  "https://api.github.com/repos/$OWNER/$REPO/actions/runs?branch=$BRANCH&per_page=5" \
+  | python -c "
+import sys, json
+runs = json.load(sys.stdin)['workflow_runs']
+for r in runs:
+    print(f\"Run {r['id']}: {r['name']} - {r['conclusion'] or r['status']}\")"
+
+# Get failed job logs (download as zip, extract, read)
+RUN_ID=<run_id>
+curl -s -L \
+  -H "Authorization: token $GITHUB_TOKEN" \
+  https://api.github.com/repos/$OWNER/$REPO/actions/runs/$RUN_ID/logs \
+  -o /tmp/ci-logs.zip
+cd /tmp && unzip -o ci-logs.zip -d ci-logs && cat ci-logs/*.txt
+```
+
+### Step 2: Fix and Push
+
+After identifying the issue, use file tools (`patch`, `write_file`) to fix it:
+
+```bash
+git add <fixed_files>
+git commit -m "fix: resolve CI failure in <check_name>"
+git push
+```
+
+### Step 3: Verify
+
+Re-check CI status using the commands from Section 4 above.
+
+### Auto-Fix Loop Pattern
+
+When asked to auto-fix CI, follow this loop:
+
+1. Check CI status → identify failures
+2. Read failure logs → understand the error
+3. Use `read_file` + `patch`/`write_file` → fix the code
+4. `git add . && git commit -m "fix: ..." && git push`
+5. Wait for CI → re-check status
+6. Repeat if still failing (up to 3 attempts, then ask the user)
+
+## 5b. Splitting PR Scope into a Separate Branch
+
+When a reviewer asks you to extract a subset of files from an existing PR into a new (often draft) PR:
+
+### The correct topology
+
+Both the original PR and the split PR target `main` independently. The split PR must contain ONLY its files with the correct content — it must never contain revert-scoping commits that undo other files. The mechanism that makes this safe: after the original PR merges, `main` carries its changes; the split PR's merge will only touch its own files and cannot revert what the first PR shipped.
+
+Do NOT use the sibling-branch-then-revert approach (create from HEAD, revert unwanted files on new branch). Any commit that reverts files to main's old state makes the net diff of the split branch zero or wrong — and if the original PR merges first and advances main, a later merge of the split branch can silently revert what the first PR changed.
+
+### Step 1: Identify the source commit for the split files
+
+The files you want to carry on the split branch must come from a commit where they already have the correct content — before any revert or scoping commits were made on the original branch.
+
+```bash
+# See all commits that touched the files you want to split
+git log --oneline -- path/to/int-file.yaml path/to/prod-file.yaml
+
+# Confirm the right commit has the correct content
+git show <COMMIT_SHA>:path/to/int-file.yaml | grep <key-field>
+```
+
+### Step 2: Create the split branch from main (not from the original branch)
+
+```bash
+git checkout main && git pull origin main
+git checkout -b feat/TICKET-description-part2
+```
+
+Starting from main ensures the split branch only diffs what you explicitly add.
+
+### Step 3: Cherry-pick the exact file content from the right commit
+
+```bash
+git checkout <COMMIT_SHA> -- path/to/int-file.yaml path/to/prod-file.yaml
+```
+
+Verify the content is correct before committing:
+```bash
+git diff --cached -- path/to/int-file.yaml | grep <key-field>
+```
+
+### Step 4: Verify the split branch diff is clean
+
+```bash
+git diff main...HEAD --name-only   # must show ONLY the split files
+```
+
+If dev/other files appear, you picked the wrong commit or the wrong files.
+
+### Step 5: Commit and push
+
+```bash
+git commit -m "feat: description of the split-off change"
+git push origin feat/TICKET-description-part2
+```
+
+### Step 6: Strip the split files from the original branch
+
+```bash
+git checkout feat/TICKET-original-branch
+git checkout main -- path/to/int-file.yaml path/to/prod-file.yaml
+git commit -m "chore: remove X changes — split to separate draft PR"
+git push --force-with-lease origin feat/TICKET-original-branch
+```
+
+For ADDED files (not on main), use `git rm` instead of `git checkout main --`.
+
+Pitfall — `git checkout main -- <new-file>` fails with "pathspec did not match" for files added by the branch (not present on main). Check `git diff main...HEAD --name-only` to identify ADDED vs MODIFIED files before reverting.
+
+### Step 7: Verify each branch and run tests
+
+```bash
+# On original branch
+git diff main...HEAD --name-only   # must show only original-PR files
+uv run pytest <relevant dirs> -q
+
+# On split branch  
+git checkout feat/TICKET-description-part2
+git diff main...HEAD --name-only   # must show only split files
+```
+
+### Step 8: Open the draft PR for the split branch, then comment on the original
+
+```bash
+gh pr create \
+  --base main \
+  --head feat/TICKET-description-part2 \
+  --draft \
+  --title "..." \
+  --body "..."
+
+gh pr comment <ORIGINAL_PR_NUMBER> --body "Split done — X moved to draft PR #NNN. Original is now clear to merge."
+```
+
+In the draft PR body, document the merge prerequisite explicitly: 'Merge after PR #NNN is deployed' and list any external prerequisites.
+
+---
+
+## 6. Merging
+
+**With gh:**
+
+```bash
+# Squash merge + delete branch (cleanest for feature branches)
+gh pr merge --squash --delete-branch
+
+# Enable auto-merge (merges when all checks pass)
+gh pr merge --auto --squash --delete-branch
+```
+
+**With git + curl:**
+
+```bash
+PR_NUMBER=<number>
+
+# Merge the PR via API (squash)
+curl -s -X PUT \
+  -H "Authorization: token $GITHUB_TOKEN" \
+  https://api.github.com/repos/$OWNER/$REPO/pulls/$PR_NUMBER/merge \
+  -d "{
+    \"merge_method\": \"squash\",
+    \"commit_title\": \"feat: add user authentication (#$PR_NUMBER)\"
+  }"
+
+# Delete the remote branch after merge
+BRANCH=$(git branch --show-current)
+git push origin --delete $BRANCH
+
+# Switch back to main locally
+git checkout main && git pull origin main
+git branch -d $BRANCH
+```
+
+Merge methods: `"merge"` (merge commit), `"squash"`, `"rebase"`
+
+### Enable Auto-Merge (curl)
+
+```bash
+# Auto-merge requires the repo to have it enabled in settings.
+# This uses the GraphQL API since REST doesn't support auto-merge.
+PR_NODE_ID=$(curl -s \
+  -H "Authorization: token $GITHUB_TOKEN" \
+  https://api.github.com/repos/$OWNER/$REPO/pulls/$PR_NUMBER \
+  | python -c "import sys,json; print(json.load(sys.stdin)['node_id'])")
+
+curl -s -X POST \
+  -H "Authorization: token $GITHUB_TOKEN" \
+  https://api.github.com/graphql \
+  -d "{\"query\": \"mutation { enablePullRequestAutoMerge(input: {pullRequestId: \\\"$PR_NODE_ID\\\", mergeMethod: SQUASH}) { clientMutationId } }\"}"
+```
+
+## 7. Complete Workflow Example
+
+```bash
+# 1. Start from clean main
+git checkout main && git pull origin main
+
+# 2. Branch
+git checkout -b fix/login-redirect-bug
+
+# 3. (Agent makes code changes with file tools)
+
+# 4. Commit
+git add src/auth/login.py tests/test_login.py
+git commit -m "fix: correct redirect URL after login
+
+Preserves the ?next= parameter instead of always redirecting to /dashboard."
+
+# 5. Push
+git push -u origin HEAD
+
+# 6. Create PR (picks gh or curl based on what's available)
+# ... (see Section 3)
+
+# 7. Monitor CI (see Section 4)
+
+# 8. Merge when green (see Section 6)
+```
+
+## Useful PR Commands Reference
+
+| Action | gh | git + curl |
+|--------|-----|-----------|
+| List my PRs | `gh pr list --author @me` | `curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/$OWNER/$REPO/pulls?state=open"` |
+| View PR diff | `gh pr diff` | `git diff main...HEAD` (local) or `curl -H "Accept: application/vnd.github.diff" ...` |
+| Add comment | `gh pr comment N --body "..."` | `curl -X POST .../issues/N/comments -d '{"body":"..."}'` |
+| Request review | `gh pr edit N --add-reviewer user` | `curl -X POST .../pulls/N/requested_reviewers -d '{"reviewers":["user"]}'` |
+| Close PR | `gh pr close N` | `curl -X PATCH .../pulls/N -d '{"state":"closed"}'` |
+| Check out someone's PR | `gh pr checkout N` | `git fetch origin pull/N/head:pr-N && git checkout pr-N` |
