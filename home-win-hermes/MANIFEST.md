@@ -1,8 +1,8 @@
-# MANIFEST — home-win-harness
+# MANIFEST — home-win-hermes
 
 Generated: 2026-10-13
 Source host: Windows 11 (Hermes home `$HERMES_HOME` = `%USERPROFILE%\AppData\Local\hermes`)
-This folder: `home-win-harness/` (personal Windows-11 config; separate from `sap-mac-harness`)
+This folder: `home-win-hermes/` (personal Windows-11 config; separate from `sap-mac-hermes`)
 
 ## Top-level
 ```
@@ -63,8 +63,8 @@ secrets sweep  : live secret VALUES found outside the live `KEY=` lines were als
 ```
 Everything else is an unmodified copy of the live `$HERMES_HOME` (secrets excepted).
 
-## Config isolation (this config must never collide with sap-mac-harness)
-This folder and `sap-mac-harness/` are fully independent: separate top-level
+## Config isolation (this config must never collide with sap-mac-hermes)
+This folder and `sap-mac-hermes/` are fully independent: separate top-level
 trees, separate secret sets, separate provider auth, separate memory bank.
 They must be imported into **separate** `$HERMES_HOME` locations (or separate
 Hermes profiles via `hermes profiles`) — never merged into one home. See

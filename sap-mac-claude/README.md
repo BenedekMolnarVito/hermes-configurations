@@ -6,7 +6,7 @@ importer, fill in the secrets, and you have the same Claude Code setup: model
 gateway, behavioral guidelines, memory, skills, agent-hooks, plugins, and MCP
 wiring.
 
-This folder is independent of the sibling `*-harness` folders in this repo (which
+This folder is independent of the sibling `*-hermes` folders in this repo (which
 export **Hermes Agent**, a different tool). This folder exports **Claude Code**
 and owns only `sap-mac-claude/`, copying nothing from outside it.
 

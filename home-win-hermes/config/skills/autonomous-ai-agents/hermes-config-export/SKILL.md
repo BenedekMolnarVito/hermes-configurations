@@ -12,7 +12,7 @@ metadata:
 # Hermes Config Export (secret-free bundles)
 
 Produce or refresh a shareable, secret-free Hermes config export — e.g. the
-per-OS harness folders (`home-win-harness/`, `sap-mac-harness/`) in the
+per-OS Hermes configuration folders (`home-win-hermes/`, `sap-mac-hermes/`) in the
 `hermes-configurations` repo. Governs the loop:
 refresh from live `$HERMES_HOME` → redact → value-sweep → leak gate →
 independent audit → commit/push. The import direction (decrypt/copy onto a
@@ -20,7 +20,7 @@ target) is `hermes-config-migration`; the two are complementary halves.
 
 ## When to Use
 
-- Refreshing an existing harness folder after changing the live config
+- Refreshing an existing Hermes configuration folder after changing the live config
 - Adding a new per-OS / per-machine config folder to the repo
 - Any Hermes config snapshot that will be committed or published anywhere
 

@@ -1,13 +1,13 @@
-# sap-mac-harness Hermes Configuration Ingestion
+# sap-mac-hermes Hermes Configuration Ingestion
 
-**Goal:** Wire JEV/TypeSafe decision hooks and copy generic skills from sap-mac-harness into Claude Code's user-scoped settings.
+**Goal:** Wire JEV/TypeSafe decision hooks and copy generic skills from sap-mac-hermes into Claude Code's user-scoped settings.
 
 **Architecture:** All changes are user-scoped (`~/.claude/settings.json` and `~/.claude/skills/`). Hook scripts live at `~/.hermes/agent-hooks/` (pre-existing Hermes install). A thin Claude Code adapter wraps the Hermes `UserPromptSubmit` payload format mismatch.
 
 **Key components:**
 - `~/.claude/settings.json` — env vars (TYPESAFE_API_KEY, HERMES_HOME) + hooks section
 - `~/.hermes/agent-hooks/hook_skill_route_cc.py` — Claude Code adapter for skill routing
-- `~/.claude/skills/` — 58 non-FAA skills copied from sap-mac-harness
+- `~/.claude/skills/` — 58 non-FAA skills copied from sap-mac-hermes
 
 ---
 

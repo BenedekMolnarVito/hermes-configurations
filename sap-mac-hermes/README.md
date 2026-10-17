@@ -1,12 +1,12 @@
-# sap-mac-harness
+# sap-mac-hermes
 
 A **self-contained, importable export of a complete Hermes Agent configuration**,
 captured from a macOS workstation. Drop this folder onto a new machine, run the
-importer, fill in the secrets, and you have the same Hermes harness: model
+importer, fill in the secrets, and you have the same Hermes configuration: model
 routing, persona, memory, skills, agent-hooks, cron jobs, and MCP wiring.
 
 This folder is independent of any sibling folders in this repo — it owns only
-`sap-mac-harness/` and copies nothing from outside it.
+`sap-mac-hermes/` and copies nothing from outside it.
 
 > **Secrets are redacted.** No live API keys or auth tokens are stored here.
 > Every stripped value is replaced with `__SET_ME_ON_IMPORT__` and must be
@@ -17,7 +17,7 @@ This folder is independent of any sibling folders in this repo — it owns only
 ## Layout
 
 ```
-sap-mac-harness/
+sap-mac-hermes/
 ├── README.md            ← you are here
 ├── MANIFEST.md          ← file inventory + counts
 ├── install.sh           ← idempotent importer (dry-run by default)
@@ -51,7 +51,7 @@ Prerequisite: Hermes Agent is installed and has been run once (so `$HERMES_HOME`
 default `~/.hermes`, exists).
 
 ```bash
-cd sap-mac-harness
+cd sap-mac-hermes
 
 # 1. Preview exactly what will be copied (changes nothing):
 ./install.sh
@@ -155,7 +155,7 @@ on the config:
 ## Maintaining this export (re-export after you change your live config)
 
 To refresh this folder from the current live `~/.hermes`, re-run the same
-curation the export used. From inside `sap-mac-harness/`:
+curation the export used. From inside `sap-mac-hermes/`:
 
 ```bash
 SRC="${HERMES_HOME:-$HOME/.hermes}"

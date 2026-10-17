@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================================
-# sap-mac-harness — Hermes Agent configuration importer
+# sap-mac-hermes — Hermes Agent configuration importer
 # ----------------------------------------------------------------------------
 # Copies this bundle's config into a Hermes home ($HERMES_HOME, default
 # ~/.hermes) on a NEW machine. Idempotent and non-destructive: it backs up
@@ -26,7 +26,7 @@ ts="$(date +%Y%m%d-%H%M%S)"
 say()  { printf '%s\n' "$*"; }
 hr()   { printf '%s\n' "------------------------------------------------------------"; }
 
-say "sap-mac-harness importer"
+say "sap-mac-hermes importer"
 hr
 say "Source : $SRC"
 say "Target : $DST"
@@ -34,7 +34,7 @@ say "Target : $DST"
 hr
 
 if [[ ! -d "$SRC" ]]; then
-  say "ERROR: $SRC not found — run this script from inside sap-mac-harness/."
+  say "ERROR: $SRC not found — run this script from inside sap-mac-hermes/."
   exit 1
 fi
 mkdir -p "$DST"

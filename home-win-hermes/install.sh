@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # ============================================================================
-# home-win-harness — Hermes Agent configuration importer (Windows 11 / Git Bash)
+# home-win-hermes — Hermes Agent configuration importer (Windows 11 / Git Bash)
 # ----------------------------------------------------------------------------
 # Copies this bundle's config into a Hermes home on a new machine. Idempotent
 # and non-destructive: existing files are backed up to *.bak-<timestamp>
 # before overwrite; a live .env / auth.json is NEVER overwritten — if absent,
 # the redacted template is seeded for you to fill in.
 #
-# This config is the PERSONAL Windows-11 harness — intentionally separate from
-# the sap-mac-harness macOS config. Do NOT import it into the same $HERMES_HOME
+# This config is the PERSONAL Windows-11 Hermes configuration — intentionally separate from
+# the sap-mac-hermes macOS config. Do NOT import it into the same $HERMES_HOME
 # that holds another config (different secret sets / provider auth / memory
 # bank). See CONTRIBUTING.md "Config isolation" and the README. Use a separate
 # $HERMES_HOME (or `hermes profiles`) per config.
@@ -32,7 +32,7 @@ ts="$(date +%Y%m%d-%H%M%S)"
 say()  { printf '%s\n' "$*"; }
 hr()   { printf '%s\n' "------------------------------------------------------------"; }
 
-say "home-win-harness importer"
+say "home-win-hermes importer"
 hr
 say "Source : $SRC"
 say "Target : $DST"
@@ -43,7 +43,7 @@ if [[ "$SRC" == "$DST" ]]; then
   say "ERROR: source and target resolve to the same path — refusing to clobber."
   exit 1
 fi
-if [[ ! -d "$SRC" ]]; then say "ERROR: $SRC not found — run this script from inside home-win-harness/."; exit 1; fi
+if [[ ! -d "$SRC" ]]; then say "ERROR: $SRC not found — run this script from inside home-win-hermes/."; exit 1; fi
 mkdir -p "$DST"
 
 # copy_dir SUB  — mirror a directory, backing up existing target files first

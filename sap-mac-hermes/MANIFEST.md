@@ -1,4 +1,4 @@
-# MANIFEST — sap-mac-harness
+# MANIFEST — sap-mac-hermes
 
 Generated: 2026-10-12T08:40:00Z
 Source host: macOS (Hermes home $HERMES_HOME = ~/.hermes)

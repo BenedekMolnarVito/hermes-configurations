@@ -1,12 +1,12 @@
-# home-win-harness
+# home-win-hermes
 
 A **self-contained, importable export of a complete Hermes Agent configuration**
 captured from a **Windows 11** workstation. Drop this folder onto a new machine,
-run the importer, fill in the secrets, and you have the same Hermes harness:
+run the importer, fill in the secrets, and you have the same Hermes configuration:
 model routing, persona, memory, skills, agent-hooks, and (empty) cron.
 
 > **This is the personal Windows config — intentionally separate from
-> [`sap-mac-harness`](../sap-mac-harness)**, the macOS export. The two live in
+> [`sap-mac-hermes`](../sap-mac-hermes)**, the macOS export. The two live in
 > their own top-level folders, ship **different secret sets** and **different
 > provider auth**, and must be imported into **separate** `$HERMES_HOME`
 > profiles. See [CONTRIBUTING.md](../CONTRIBUTING.md) → "Config isolation".
@@ -20,7 +20,7 @@ model routing, persona, memory, skills, agent-hooks, and (empty) cron.
 ## Layout
 
 ```
-home-win-harness/
+home-win-hermes/
 ├── README.md            ← you are here
 ├── MANIFEST.md          ← file inventory + counts
 ├── install.sh           ← idempotent importer (dry-run by default)
@@ -55,7 +55,7 @@ Prerequisite: Hermes Agent is installed and has been run once (so
 `~/.hermes`).
 
 ```bash
-cd home-win-harness
+cd home-win-hermes
 
 # 1. Preview exactly what will be copied (changes nothing):
 ./install.sh
@@ -184,7 +184,7 @@ and was **non-functional on this Windows machine** (its backing script,
 ## Maintaining this export (re-export after you change your live config)
 
 To refresh this folder from the current live `$HERMES_HOME`, re-run the same
-curation the export used. From inside `home-win-harness/` (Git Bash):
+curation the export used. From inside `home-win-hermes/` (Git Bash):
 
 ```bash
 SRC="${HERMES_HOME:-$LOCALAPPDATA/hermes}"
