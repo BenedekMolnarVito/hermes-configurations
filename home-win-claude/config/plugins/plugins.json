@@ -1,0 +1,11 @@
+{
+  "marketplaces": {
+    "claude-plugins-official": "anthropics/claude-plugins-official",
+    "wong2-plugins": "wong2/claude-plugins",
+    "caveman": "JuliusBrussee/caveman"
+  },
+  "plugins": [
+    "resumer@wong2-plugins",
+    "caveman@caveman"
+  ]
+}

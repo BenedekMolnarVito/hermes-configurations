@@ -1,0 +1,7 @@
+# home-win-claude — never commit live settings or runtime state
+config/settings.json
+config/settings.local.json
+config/agent-hooks/interruptions.log
+*.bak-*
+**/__pycache__/
+*.pyc

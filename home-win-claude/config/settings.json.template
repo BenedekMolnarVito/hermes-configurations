@@ -1,0 +1,60 @@
+{
+  "env": {
+    "CLAUDE_CODE_SUBAGENT_MODEL": "sonnet",
+    "CAVEMAN_DEFAULT_MODE": "manual"
+  },
+  "permissions": {
+    "defaultMode": "auto"
+  },
+  "model": "opus",
+  "effortLevel": "medium",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"{{CLAUDE_HOME}}/agent-hooks/agent_state_hooks.py\" session-start",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "StopFailure": [
+      {
+        "matcher": "rate_limit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"{{CLAUDE_HOME}}/agent-hooks/agent_state_hooks.py\" rate-limit",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"{{CLAUDE_HOME}}/agent-hooks/agent_state_hooks.py\" subagent-contract",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
+  "extraKnownMarketplaces": {
+    "wong2-plugins": {
+      "source": { "source": "github", "repo": "wong2/claude-plugins" }
+    },
+    "caveman": {
+      "source": { "source": "github", "repo": "JuliusBrussee/caveman" }
+    }
+  },
+  "enabledPlugins": {
+    "resumer@wong2-plugins": true,
+    "caveman@caveman": true
+  }
+}
