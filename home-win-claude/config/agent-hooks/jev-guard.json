@@ -1,0 +1,10 @@
+{
+  "routing": {
+    "deep":     {"model": "opus",   "effort": "high"},
+    "standard": {"model": "sonnet", "effort": "medium"},
+    "quick":    {"model": "haiku",  "effort": "low"},
+    "thresholds": {"deep_min": 1.5, "standard_min": 0.6},
+    "pinned_agents": ["scout", "reviewer", "chunk-reviewer", "synthesizer", "fork", "claude-code-guide", "statusline-setup"]
+  },
+  "jev": {"model": "jev-latest", "timeout_seconds": 5, "fail_open": true}
+}

@@ -20,7 +20,14 @@ User durably wants subagent orchestration. Counts as asked — no per-task reque
 - Independent dispatches in ONE message → parallel. Parallel writers need disjoint files, else `isolation: "worktree"`.
 - Briefs + results = FILES: long brief → `.agent/briefs/<id>.md`, pass path. Child report = claim: verify commits/tests yourself.
 - 3+ task plan or multi-repo → load `orchestrate` skill first.
+- Big PR/branch review → one `reviewer` (opus); it chunks to haiku `chunk-reviewer`s itself + cross-refs.
 - Inter-agent I/O = caveman, always, no ask needed: write briefs/prompts/reports terse (drop articles, filler, pleasantries; fragments OK; `→` for causality). Keep exact: code, paths, symbols, commands, errors, numbers. Hook appends same rule to every Agent prompt. User-facing chat stays normal unless `/caveman`.
+
+## 6. JEV (TypeSafe) for decisions
+Typed decide/rank/route → JEV, not own judgement. Key `TYPESAFE_API_KEY` in user env.
+- Classify/rank/verify lists → `jev-decisions`. PR gate, test triage, RAG/hallucination check → `jev-engineering`. Tickets/bugs/AC/OKR → `jev-team-roles`.
+- Auto (hooks): Agent w/o `model`, not pinned (scout/reviewer/chunk-reviewer/synthesizer/fork) → JEV re-tiers model+effort (implementer, general-purpose, Explore…); bulk classify brief → denied, use `jev-decisions`; prompt → `JEV skill route` hint (advice only). `[jev-skip]` in prompt bypasses. Config `~/.claude/agent-hooks/jev-guard.json`, log `~/.claude/logs/jev-guard.jsonl`.
+- JEV down → fail-open, decide yourself. Prompts/briefs egress to api.typesafe.ai.
 
 ## Persistence (MANDATORY, every task)
 Rate limit can cut session any moment. Next message may be fresh context. Disk = memory, conversation ≠.

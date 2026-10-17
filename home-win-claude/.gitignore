@@ -5,3 +5,4 @@ config/agent-hooks/interruptions.log
 *.bak-*
 **/__pycache__/
 *.pyc
+config/logs/

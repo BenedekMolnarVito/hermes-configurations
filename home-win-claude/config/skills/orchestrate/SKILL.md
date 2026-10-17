@@ -19,7 +19,7 @@ State: `.agent/` (one repo) or `~/agent-work/<project>/` (multi-repo). Missing �
 - Plan on disk BEFORE any dispatch.
 
 ## 3. Dispatch
-- Tier by work: `scout` (haiku) search/distill · `implementer` (sonnet) one scoped task · `reviewer` (opus) large/high-risk verdicts · `synthesizer` (sonnet) reduce. `model` param only to escalate one dispatch.
+- Tier by work: `scout` (haiku) search/distill · `implementer` (sonnet) one scoped task · `reviewer` (opus) large/high-risk verdicts · `synthesizer` (sonnet) reduce. `model` param only to escalate one dispatch. No `model` → JEV hook may route tier (pinned agents exempt).
 - Brief = exact paths/symbols, exact change, verify command, done format, stop conditions ("assumption mismatch → BLOCKED"). Can't write that without exploring → explore first (self or scout). Never "figure out X and fix it".
 - Long brief (>~40 lines, code, diffs) → `.agent/briefs/<id>.md`; prompt = "Read <path> first, authoritative" + task id + report path.
 - Carry forward only what later task can't know: interfaces earlier tasks made, your rulings. Never paste session history.
@@ -36,6 +36,7 @@ State: `.agent/` (one repo) or `~/agent-work/<project>/` (multi-repo). Missing �
 ## 5. Review
 - Per-task review only for non-trivial diffs; scale reviewer to risk.
 - Final whole-branch review (one `reviewer`): full diff file + briefs; point at files two tasks both touched + round-trip paths (serialize/export/copy). Per-task reviews miss cross-task gaps.
+- Large diff: don't chunk yourself — reviewer decides, fans out haiku `chunk-reviewer`s, cross-refs on opus. Give it a report dir.
 - Fix wave: all Critical/Important → ONE fix dispatch + ONE scoped re-review.
 
 ## 6. Bulky I/O → map-reduce, not your context

@@ -4,7 +4,8 @@ merge_settings.py TEMPLATE LIVE CLAUDE_HOME [--apply]
 
 Merge the bundle's settings template into a live settings.json without losing local
 entries: dicts deep-merge (template wins on scalar conflicts), hook groups are appended
-per event only when their command is not already present (idempotent), lists of
+per event only when their command is not already present (idempotent; present ones get
+the template's fields, e.g. timeout), lists of
 permission rules are unioned. Prints the result; with --apply writes it (after a
 .bak-<timestamp> backup).
 """
@@ -25,6 +26,12 @@ def merge_hooks(live, tmpl):
         for g in groups:
             if not _commands([g]) <= have:
                 cur.append(g)
+                continue
+            # already present → sync template fields (e.g. timeout) onto the live hook
+            tmpl_hooks = {h.get("command"): h for h in g.get("hooks", [])}
+            for lg in cur:
+                for h in lg.get("hooks", []):
+                    h.update(tmpl_hooks.get(h.get("command"), {}))
     return live
 
 

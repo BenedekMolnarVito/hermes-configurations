@@ -57,10 +57,12 @@ Changed files are backed up as `*.bak-<timestamp>`; `settings.json` is merged, n
 | 2.7 multi-repo protocol | `orchestrate` skill §1, §8 |
 | 3 model routing | tiered agents (frontmatter `model` beats `CLAUDE_CODE_SUBAGENT_MODEL` since v2.1.251); `CLAUDE_CODE_SUBAGENT_MODEL=sonnet` as the cheap default for untyped spawns |
 | 4 cut input noise | CLAUDE.md context-hygiene rules (GitNexus first, filter output); Caveman in `manual` mode for chat (`/caveman` to opt in); inter-agent I/O always caveman (CLAUDE.md rule + `subagent-contract` hook) |
+| JEV (TypeSafe) | `agent-hooks/jevlib` (stdlib, fail-open) + `jev-guard.json`. `PreToolUse(Agent)`: bulk-classify deny + JEV model/effort route for unpinned agents w/o `model`. `UserPromptSubmit`: JEV skill-route hint. Skills `jev-decisions`, `jev-engineering`, `jev-team-roles`. Key from user env `TYPESAFE_API_KEY`; `[jev-skip]` bypasses. Privacy: prompts ≥20 chars + unpinned Agent briefs are sent to api.typesafe.ai |
+| chunked PR review | `reviewer` (opus, has `Agent`) decides: small → alone; large → haiku `chunk-reviewer` per chunk (high-risk/JEV risk ≥1.5 chunks stay opus) → opus cross-ref via `XREF:` lists, confirms every haiku Critical/Important |
 
 ## Deliberately not ported from sap-mac-claude
 
-- **JEV / TypeSafe hooks + jevlib** (delegate-route, batch/bulk-io guards, citation, skill-route, caveman-report): need a TypeSafe key and Hermes, which this box has neither of. Several also match Hermes tool names (`delegate_task`, `read_file`, `write_file`), so they never fire under Claude Code. The routing idea is replaced by tiered agents; the bulk-I/O idea by the map-reduce section of `orchestrate`.
+- **JEV hooks without a CC equivalent**: `browser_select` (CC browser tools carry no candidate list), `jira_classify` (no Jira tool here), `caveman_report` (CC hooks can't rewrite Agent output → caveman via prompt rule instead), `citation_guard` (telemetry-only in Hermes), mechanical `caveman.compress` of briefs (drops "to"/"and" → meaning loss).
 - **Hindsight hooks, Jira MCP, SAP gateway/OTEL env, SAP marketplaces**: work-machine only.
 - **The 60-skill catalog**: mostly Hermes-authored (`delegate_task`, `~/.hermes` paths). The orchestration ones are condensed into `orchestrate`; doc skills (pdf/docx/xlsx) are already provided by claude.ai here.
 

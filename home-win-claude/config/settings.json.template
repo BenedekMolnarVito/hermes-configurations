@@ -39,7 +39,18 @@
           {
             "type": "command",
             "command": "python \"{{CLAUDE_HOME}}/agent-hooks/agent_state_hooks.py\" subagent-contract",
-            "timeout": 10
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"{{CLAUDE_HOME}}/agent-hooks/agent_state_hooks.py\" skill-route",
+            "timeout": 15
           }
         ]
       }
@@ -47,10 +58,16 @@
   },
   "extraKnownMarketplaces": {
     "wong2-plugins": {
-      "source": { "source": "github", "repo": "wong2/claude-plugins" }
+      "source": {
+        "source": "github",
+        "repo": "wong2/claude-plugins"
+      }
     },
     "caveman": {
-      "source": { "source": "github", "repo": "JuliusBrussee/caveman" }
+      "source": {
+        "source": "github",
+        "repo": "JuliusBrussee/caveman"
+      }
     }
   },
   "enabledPlugins": {
