@@ -9,23 +9,32 @@ rebuilt Claude-Code-native and extended with the
   four model-tiered subagents, and an `orchestrate` skill;
 - **rate-limit-proof persistence** — `.agent/` state files, a mandatory protocol in
   `CLAUDE.md`, a `SessionStart` hook that re-injects state, a `StopFailure` trace hook,
-  and the `resumer` plugin to wake the session when the limit resets.
+  and the `resumer` plugin to wake the session when the limit resets;
+- **JEV (TypeSafe) decisions** — jevlib + 3 `jev-*` skills, JEV model routing / bulk guard /
+  skill hints in hooks;
+- **chunked PR review** — opus `reviewer` fans large diffs out to haiku `chunk-reviewer`s;
+- **caveman inter-agent I/O** — condensed prompts, terse subagent briefs/reports.
 
-No secrets: this machine logs in with the Pro subscription (no gateway token).
+No secrets in the bundle: Pro subscription login (no gateway token). The one secret,
+`TYPESAFE_API_KEY`, lives in the Windows **user** environment only (see Import).
 
 ## Layout
 
 ```
 home-win-claude/
-├── install.ps1          importer (dry-run by default; -Apply, -Plugins)
+├── install.ps1          importer (dry-run by default; -Apply, -Plugins, -Rtk)
+├── export.ps1           exporter: live ~/.claude → config/ (+ drift report, secret scan)
 ├── merge_settings.py    merges the template into a live settings.json (idempotent)
+├── settings_drift.py    read-only live-vs-template settings diff (used by export.ps1)
 └── config/              copied into $CLAUDE_HOME (~/.claude)
     ├── CLAUDE.md                   guidelines + orchestration + persistence protocol
     ├── settings.json.template      hooks, env, plugins ({{CLAUDE_HOME}} filled on import)
-    ├── agents/                     scout (haiku) · implementer (sonnet) · reviewer (opus) · synthesizer (sonnet)
+    ├── agents/                     scout (haiku) · implementer (sonnet) · reviewer (opus) · chunk-reviewer (haiku) · synthesizer (sonnet)
     ├── skills/orchestrate/         controller playbook (dispatch, worktrees, map-reduce, multi-repo resume)
     ├── skills/agent-state/         creates .agent/ + templates
-    ├── agent-hooks/agent_state_hooks.py   session-start · rate-limit · subagent-contract
+    ├── skills/jev-{decisions,engineering,team-roles}/   JEV typed-question scripts
+    ├── agent-hooks/agent_state_hooks.py   session-start · rate-limit · subagent-contract (JEV route/guard) · skill-route
+    ├── agent-hooks/jevlib/ + jev-guard.json   JEV client (stdlib, fail-open) + tiers/pinned agents
     ├── bin/claude-resumable.ps1    launcher with the resumer channel enabled
     └── plugins/plugins.json        marketplaces + plugins to install
 ```
@@ -38,6 +47,7 @@ Prerequisites: Claude Code, a real `python` 3.9+ on PATH (not the Store `python3
 cd home-win-claude
 ./install.ps1                    # preview
 ./install.ps1 -Apply -Plugins    # copy, merge settings.json, install resumer + caveman
+[Environment]::SetEnvironmentVariable('TYPESAFE_API_KEY', '<key>', 'User')   # JEV; skip → JEV fail-open no-op
 ```
 
 Then **restart Claude Code** and check `/hooks`, `/agents`, `/plugin`, `/context`.
@@ -69,16 +79,26 @@ Changed files are backed up as `*.bak-<timestamp>`; `settings.json` is merged, n
 ## Optional / user choices
 
 - **RTK** output filtering (`./install.ps1 -Apply -Rtk`): winget-installs `rtk-ai.rtk` and runs `rtk init -g --auto-patch`, which adds a `PreToolUse:Bash` hook (`rtk hook claude`, rewrites e.g. `git status` → `rtk git status`) and `@RTK.md` to CLAUDE.md. Third-party binary — opt-in. Installed on this box 2026-10-17 (rtk 0.50.0). winget adds `%LOCALAPPDATA%\Microsoft\WinGet\Links` to user PATH; restart the parent app (VS Code/terminal), not just Claude Code, or the hook fails silently with `rtk: command not found`.
+- **Telegram channel** (`telegram@claude-plugins-official`, installed on this box, not in `plugins.json`): needs a bot token + pairing → `claude plugin install telegram@claude-plugins-official`, then `/telegram:configure`. Token stays out of the bundle.
 - `model`: kept `opus` by choice (strong controller). `/model opusplan` saves Pro quota if Opus usage hurts.
 - Measure: `/usage` before/after, `npx ccusage blocks`, `/context`.
 
 ## Re-export after changing the live config
 
+Every change made on this machine (by hand or by Claude) must land in `config/` before it
+counts as exported — `~/.claude` is not in git.
+
 ```powershell
-$S = "$HOME/.claude"
-Copy-Item $S/CLAUDE.md config/CLAUDE.md
-Copy-Item $S/agents/{scout,implementer,reviewer,synthesizer}.md config/agents/
-Copy-Item -Recurse -Force $S/skills/orchestrate, $S/skills/agent-state config/skills/
-Copy-Item $S/agent-hooks/agent_state_hooks.py config/agent-hooks/
+cd home-win-claude
+./export.ps1            # preview: owned files that differ, unowned candidates, drift, secret scan
+./export.ps1 -Apply     # copy live → config/ (git is the backup), re-run scan
+git diff -- .           # review, then commit
 ```
-Hook/env changes: edit `config/settings.json.template` by hand (keep `{{CLAUDE_HOME}}`).
+
+- **Owned files** (everything under `config/` except `settings.json.template`, `plugins/`) are copied back automatically.
+- **New file** (agent, skill, hook) shows up as `candidate:` → copy it into the same path under `config/` once; from then on it is owned by both scripts. Update `MANIFEST.md` + the Layout above.
+- **Settings / plugins drift** is reported, never auto-copied: fold wanted items into `config/settings.json.template` (keep `{{CLAUDE_HOME}}`) or `config/plugins/plugins.json` by hand.
+- **Expected drift, owned elsewhere — don't export**: GitNexus (`hooks/gitnexus`, `skills/gitnexus-*`, its PreToolUse/PostToolUse hooks → `npx gitnexus setup`), RTK (`rtk hook claude`, `RTK.md` → `install.ps1 -Rtk`), Telegram plugin (see Optional).
+- **Secret scan fails (exit 1)** on any live value of `TYPESAFE_API_KEY` / `ANTHROPIC_API_KEY` / … or key-shaped strings in the bundle. Never commit past it.
+- **Round-trip check** (proves a fresh machine gets the same config):
+  `$env:CLAUDE_HOME="$env:TEMP/rt"; ./install.ps1 -Apply; ./export.ps1` → no `update`/`missing`, `settings drift: none`. Then `Remove-Item Env:CLAUDE_HOME`.

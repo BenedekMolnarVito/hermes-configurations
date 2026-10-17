@@ -6,7 +6,9 @@ Target host: Windows 11, Claude Code 2.1.302, Pro subscription ($CLAUDE_HOME = ~
 ## Top-level
 ```
 install.ps1          importer (dry-run default; -Apply copies + merges; -Plugins installs plugins)
-merge_settings.py    idempotent settings.json merge (hooks appended by command, dicts deep-merged)
+export.ps1           exporter (dry-run default; -Apply copies live owned files → config/; drift + secret scan)
+merge_settings.py    idempotent settings.json merge (hooks appended by command, timeouts synced, dicts deep-merged)
+settings_drift.py    read-only live-vs-template settings report
 README.md            import / design / re-export notes
 MANIFEST.md          this file
 .gitignore           blocks live settings, backups, runtime logs
@@ -32,4 +34,5 @@ plugins/plugins.json                    marketplaces + plugins (resumer, caveman
 ```
 
 ## Secrets
-None. Pro subscription OAuth lives in ~/.claude/.credentials.json (never exported).
+TYPESAFE_API_KEY: Windows user env only (export.ps1 scan fails if its value enters the bundle).
+None else. Pro subscription OAuth lives in ~/.claude/.credentials.json (never exported).

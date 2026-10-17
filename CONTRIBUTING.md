@@ -66,6 +66,12 @@ Run this on the machine whose config you are exporting. Resolve its Hermes home
 from `$HERMES_HOME` (default `~/.hermes` on macOS/Linux,
 `%USERPROFILE%\.hermes` on Windows) — never hardcode a path.
 
+**Claude Code configs (`*-claude`)** use `$CLAUDE_HOME` (default `~/.claude`) instead and
+ship an importer/exporter pair: the exporter copies every bundle-owned file back from the
+live home, reports unowned candidates + settings drift, and secret-scans the folder.
+Prove exportability with a round-trip into a scratch `$CLAUDE_HOME` (install → export →
+no diff). Reference: `home-win-claude/export.ps1` + its README "Re-export" section.
+
 1. **Create the folder** at the repo root; add `config/`.
 2. **Copy the essentials** into `config/`, pruning as in the golden rules:
    - `config.yaml`, `SOUL.md`

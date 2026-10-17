@@ -112,8 +112,8 @@ Hr
 AFTER IMPORT
 ------------
 1. Restart Claude Code (CLAUDE.md, agents and plugins load at session start).
-   Verify: /hooks (SessionStart, StopFailure, PreToolUse:Agent), /agents (scout,
-   implementer, reviewer, synthesizer), /plugin (resumer, caveman), /context.
+   Verify: /hooks (SessionStart, StopFailure, PreToolUse:Agent, UserPromptSubmit), /agents (scout,
+   implementer, reviewer, chunk-reviewer, synthesizer), /plugin (resumer, caveman), /context.
 2. Auto-resume after a rate limit only works when launched through the resumer channel:
      pwsh -File $Dst\bin\claude-resumable.ps1 [--add-dir <repo> ...]
    Keep that window open while the limit resets. Manual fallback: claude --continue,
@@ -121,4 +121,8 @@ AFTER IMPORT
 3. No secrets in this bundle: Pro subscription login (claude /login). Make sure
    ANTHROPIC_API_KEY is NOT set, or Claude Code bills the API instead of Pro.
 4. Caveman is installed in manual mode: off until you type /caveman.
+5. JEV (TypeSafe): set TYPESAFE_API_KEY in the Windows USER env, then restart the parent app:
+     [Environment]::SetEnvironmentVariable('TYPESAFE_API_KEY','<key>','User')
+   Without it the JEV hooks/skills are silent no-ops (fail-open).
+6. Changed the live config later? ./export.ps1 -Apply brings it back into the bundle.
 "@ | Write-Host
