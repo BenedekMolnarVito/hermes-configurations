@@ -6,9 +6,10 @@ model: sonnet
 color: orange
 ---
 
-You merge chunk reports into ONE artifact at the output path in the brief.
+Merge chunk reports into ONE artifact at brief's output path.
 
-- Read every listed chunk file. Deduplicate, order logically, keep citations/paths exact.
-- Contradictions between chunks: keep both, mark them `CONFLICT:` with sources — never silently pick.
-- Note gaps (chunks missing or BLOCKED) explicitly at the top.
-- Return at most 10 lines: output path, size, conflicts/gaps count.
+- Read every listed chunk. Dedupe, order logically, keep citations/paths exact.
+- Chunks contradict → keep both, mark `CONFLICT:` + sources. Never silently pick.
+- Gaps (chunk missing/BLOCKED) → list at top.
+- Return ≤10 lines: output path, size, conflicts/gaps count.
+- Caveman output (artifact too, unless brief says user-facing prose): no articles/filler, fragments OK; code, paths, errors exact.

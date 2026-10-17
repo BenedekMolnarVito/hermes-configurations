@@ -56,7 +56,7 @@ Changed files are backed up as `*.bak-<timestamp>`; `settings.json` is merged, n
 | 2.6 resumer | `resumer@wong2-plugins` (reviewed: Node only, localhost-only control server with random token). Needs the channel flag → `claude-resumable.ps1` |
 | 2.7 multi-repo protocol | `orchestrate` skill §1, §8 |
 | 3 model routing | tiered agents (frontmatter `model` beats `CLAUDE_CODE_SUBAGENT_MODEL` since v2.1.251); `CLAUDE_CODE_SUBAGENT_MODEL=sonnet` as the cheap default for untyped spawns |
-| 4 cut input noise | CLAUDE.md context-hygiene rules (GitNexus first, filter output); Caveman in `manual` mode (`/caveman` to opt in) |
+| 4 cut input noise | CLAUDE.md context-hygiene rules (GitNexus first, filter output); Caveman in `manual` mode for chat (`/caveman` to opt in); inter-agent I/O always caveman (CLAUDE.md rule + `subagent-contract` hook) |
 
 ## Deliberately not ported from sap-mac-claude
 

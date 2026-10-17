@@ -5,11 +5,11 @@ agent_state_hooks.py — Claude Code hooks for the rate-limit-proof persistence 
 Usage (from settings.json):
   python agent_state_hooks.py session-start      # SessionStart: inject .agent/ state
   python agent_state_hooks.py rate-limit         # StopFailure(rate_limit): leave a trace
-  python agent_state_hooks.py subagent-contract  # PreToolUse(Agent): append return contract
+  python agent_state_hooks.py subagent-contract  # PreToolUse(Agent): append caveman rule + return contract
 
 State dir: $AGENT_STATE_DIR if it exists, else the nearest `.agent/` walking up from the
-hook's cwd (stops at the git root). No state dir → every subcommand is a no-op, so this is
-free in repos that don't use the protocol.
+hook's cwd (stops at the git root). No state dir → session-start/return contract are no-ops;
+the caveman I/O rule is appended to every Agent prompt regardless.
 
 Fail-open: any error → no output, exit 0. Stdlib only.
 """
@@ -24,6 +24,9 @@ import sys
 PROGRESS_LINES = 80
 INTERRUPTION_LINES = 5
 CONTRACT_MARKER = "[return-contract]"
+CAVEMAN_MARKER = "[caveman-io]"
+CAVEMAN_RULE = (f"{CAVEMAN_MARKER} Caveman I/O: report + reply terse — no articles/filler/pleasantries, "
+                 "fragments OK, `→` for causality. Code, paths, symbols, commands, errors, numbers exact.")
 GLOBAL_LOG = pathlib.Path(__file__).with_name("interruptions.log")
 
 
@@ -55,8 +58,8 @@ def session_start(event: dict) -> None:
     s = _state_dir(event.get("cwd", ""))
     if not s:
         return
-    parts = [f"Persistence protocol: resume state found at {s}. Trust these files over recollection; "
-             "verify git state in every repo, then continue with the first unfinished task."]
+    parts = [f"Persistence: resume state at {s}. Trust files over recall; "
+             "check git state per repo, continue first unfinished task."]
     progress = _read(s / "PROGRESS.md").splitlines()[:PROGRESS_LINES]
     if progress:
         parts.append("--- PROGRESS.md ---\n" + "\n".join(progress))
@@ -80,7 +83,7 @@ def rate_limit(event: dict) -> None:
     s = _state_dir(cwd)
     if s:
         with (s / "INTERRUPTIONS.md").open("a", encoding="utf-8") as f:
-            f.write(f"- {ts} RATE LIMIT HIT (session {sid}). Resume from Now/Next in PROGRESS.md\n")
+            f.write(f"- {ts} RATE LIMIT (session {sid}). Resume from PROGRESS.md Now/Next\n")
 
 
 def subagent_contract(event: dict) -> None:
@@ -88,20 +91,22 @@ def subagent_contract(event: dict) -> None:
         return
     tool_input = dict(event.get("tool_input") or {})
     prompt = tool_input.get("prompt")
-    if not isinstance(prompt, str) or CONTRACT_MARKER in prompt or ".agent/reports" in prompt:
+    if not isinstance(prompt, str):
         return
+    add = []
+    if CAVEMAN_MARKER not in prompt:
+        add.append(CAVEMAN_RULE)
     s = _state_dir(event.get("cwd", ""))
-    if not s:
+    if s and CONTRACT_MARKER not in prompt and ".agent/reports" not in prompt:
+        add.append(f"{CONTRACT_MARKER} Full result → {(s / 'reports').as_posix()}/<task-id>.md "
+                   "(task id from brief, else short slug) BEFORE returning. "
+                   "Reply ≤10 lines: status, files changed, blockers, report path.")
+    if not add:
         return
-    reports = (s / "reports").as_posix()
-    tool_input["prompt"] = (
-        f"{prompt}\n\n{CONTRACT_MARKER} Write your full result to {reports}/<task-id>.md "
-        "(task id from the brief, else a short slug) BEFORE returning. "
-        "Your reply: at most 10 lines — status, files changed, blockers, report path."
-    )
+    tool_input["prompt"] = prompt + "\n\n" + "\n".join(add)
     _emit({"hookSpecificOutput": {"hookEventName": "PreToolUse",
                                   "permissionDecision": "allow",
-                                  "permissionDecisionReason": "agent-state return contract appended",
+                                  "permissionDecisionReason": "caveman I/O rule / return contract appended",
                                   "updatedInput": tool_input}})
 
 

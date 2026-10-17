@@ -5,54 +5,55 @@ description: Controller playbook for multi-agent work in Claude Code — executi
 
 # Orchestrate
 
-You are the CONTROLLER. You plan, dispatch, verify and integrate; subagents do bounded work.
-State lives in `.agent/` (single repo) or `~/agent-work/<project>/` (multi-repo). If it does not exist, load `agent-state` first.
+You = CONTROLLER: plan, dispatch, verify, integrate. Subagents do bounded work.
+State: `.agent/` (one repo) or `~/agent-work/<project>/` (multi-repo). Missing → load `agent-state` first.
 
-## 1. Resume check (every start, every wakeup)
-1. Read `PROGRESS.md` + `TASKS.md`. Then per repo: `git status`, `git log -5 --oneline`, `git worktree list`.
-2. Reconcile: `in-progress` task whose commit exists → verify its "Verify by", mark `done`. `in-progress` with no commit and no live child → finish it yourself from what's on disk (files written are usually right) rather than re-dispatching from scratch.
-3. A report in `reports/<id>.md` is the recovery point for a child that died after writing it.
+## 1. Resume check (every start/wakeup)
+1. Read `PROGRESS.md` + `TASKS.md`. Per repo: `git status`, `git log -5 --oneline`, `git worktree list`.
+2. Reconcile: `in-progress` + commit exists → check "Verify by", mark `done`. `in-progress`, no commit, no live child → finish yourself from disk (written files usually right), don't re-dispatch from scratch.
+3. `reports/<id>.md` = recovery point for child that died after writing it.
 
 ## 2. Plan → task table
-- Every task row: ID, Repo, one-line description, **Verify by** (a command or observable check).
-- Build each task's file-touch set. Two tasks may run in parallel IFF their sets are disjoint (check the intersection, don't eyeball). Shared files → same task or serial.
-- Record the plan on disk BEFORE dispatching anything.
+- Row: ID, Repo, one-line desc, **Verify by** (command or observable check).
+- Build each task's file-touch set. Parallel IFF sets disjoint (check intersection, don't eyeball). Shared files → same task or serial.
+- Plan on disk BEFORE any dispatch.
 
 ## 3. Dispatch
-- Tier by work, not habit: `scout` (haiku) search/distill · `implementer` (sonnet) one scoped task · `reviewer` (opus) verdicts on large/high-risk diffs · `synthesizer` (sonnet) reduce. Use the `model` param only to escalate a specific dispatch.
-- Brief = exact paths/symbols, the exact change, verify command, done format, stop conditions ("assumption mismatch → return BLOCKED"). If you can't write that without exploring, explore first (yourself or a scout) — never dispatch "figure out X and fix it".
-- Long brief (>~40 lines, embedded code, diffs) → write `.agent/briefs/<id>.md`; dispatch prompt says "Read <path> first, it is authoritative" + task id + report path.
-- Carry forward only what a later task can't know: interfaces earlier tasks created and your rulings. Never paste session history.
-- Independent dispatches in ONE message (parallel). Parallel writers on the same repo → `isolation: "worktree"` each, merge after.
-- Return contract (also injected by the `subagent_contract` hook when `.agent/` exists): full result to `.agent/reports/<id>.md`, ≤10-line reply.
+- Tier by work: `scout` (haiku) search/distill · `implementer` (sonnet) one scoped task · `reviewer` (opus) large/high-risk verdicts · `synthesizer` (sonnet) reduce. `model` param only to escalate one dispatch.
+- Brief = exact paths/symbols, exact change, verify command, done format, stop conditions ("assumption mismatch → BLOCKED"). Can't write that without exploring → explore first (self or scout). Never "figure out X and fix it".
+- Long brief (>~40 lines, code, diffs) → `.agent/briefs/<id>.md`; prompt = "Read <path> first, authoritative" + task id + report path.
+- Carry forward only what later task can't know: interfaces earlier tasks made, your rulings. Never paste session history.
+- Independent dispatches in ONE message. Parallel writers, same repo → `isolation: "worktree"` each, merge after.
+- Caveman I/O: briefs, prompts, reports terse (no articles/filler, fragments OK); code/paths/errors exact. Hook enforces on child side.
+- Return contract (hook-injected when `.agent/` exists): full result → `.agent/reports/<id>.md`, ≤10-line reply.
 
-## 4. Verify (the child's DONE is a claim)
-- `git show --stat <sha>`: scope correct, nothing from another task leaked, tree clean.
-- Run the verify command yourself. Record a known pre-existing failing test by NAME at start; "same count, different test" is a regression.
-- Parallel children report divergent test counts — ignore them; only your full run after all land counts.
-- Update TASKS.md (`done` + how verified) and PROGRESS.md after each return. Commit per task.
+## 4. Verify (child DONE = claim)
+- `git show --stat <sha>`: scope right, no leak from other task, tree clean.
+- Run verify yourself. Record known pre-existing failing test by NAME at start; "same count, different test" = regression.
+- Parallel children report divergent test counts → ignore; only your full run after all land counts.
+- After each return: TASKS.md (`done` + how verified), PROGRESS.md. Commit per task.
 
 ## 5. Review
-- Per-task review only for non-trivial diffs; scale the reviewer to the diff's risk.
-- Final whole-branch review (one `reviewer`): hand it the full diff file + task briefs and point it at files two tasks both touched and at round-trip paths (serialize/export/copy) — per-task reviews can't see cross-task gaps.
-- Fix wave: batch all Critical/Important findings into ONE fix dispatch + ONE scoped re-review.
+- Per-task review only for non-trivial diffs; scale reviewer to risk.
+- Final whole-branch review (one `reviewer`): full diff file + briefs; point at files two tasks both touched + round-trip paths (serialize/export/copy). Per-task reviews miss cross-task gaps.
+- Fix wave: all Critical/Important → ONE fix dispatch + ONE scoped re-review.
 
 ## 6. Bulky I/O → map-reduce, not your context
-Huge file, many URLs, tree-wide sweep: split into chunks → one `scout` per chunk writing `reports/<id>-chunkN.md` → one `synthesizer` producing the final artifact. You keep only the final path + a short summary.
+Huge file, many URLs, tree-wide sweep: chunk → one `scout` per chunk → `reports/<id>-chunkN.md` → one `synthesizer` → final artifact. Keep only final path + short summary.
 
 ## 7. Parallel review of N artifacts
-N independent read-only reviews → N `reviewer`/`scout` dispatches in one message, each with its own report path, then one synthesis. Don't let reviewers edit.
+N read-only reviews → N `reviewer`/`scout` in one message, own report path each, then one synthesis. Reviewers never edit.
 
 ## 8. Multi-repo
-- State in `~/agent-work/<project>/`; TASKS.md has a `Repo` column.
+- State in `~/agent-work/<project>/`; TASKS.md has `Repo` column.
 - Launch: `claude --add-dir <repoA> --add-dir <repoB>` (via `claude-resumable.ps1` for auto-resume).
-- One worktree per repo/task for parallel children so a cut-off can't leave a shared tree half-edited.
+- One worktree per repo/task for parallel children → cut-off can't leave shared tree half-edited.
 
 ## 9. Finish
-Remove worktrees (`git worktree remove <path>; git worktree prune`), delete merged task branches. Present merge / push+PR / keep and WAIT — pushing or merging a shared base is the user's call. List your rulings so the user can overturn them.
+Remove worktrees (`git worktree remove <path>; git worktree prune`), delete merged task branches. Offer merge / push+PR / keep, then WAIT — push/merge to shared base = user's call. List your rulings so user can overturn.
 
 ## Pitfalls
-- Re-dispatching a task that looks incomplete while its child is still running → two writers on one branch.
-- `git worktree add` for the currently checked-out branch fails; serial tasks work in place.
-- Inlining big diffs/briefs into dispatch prompts: bloats every later turn. Paths, not payloads.
-- Spawning for a 1-file edit: the fixed spawn cost exceeds the work.
+- Re-dispatch "incomplete" task while child still running → two writers, one branch.
+- `git worktree add` on checked-out branch fails; serial tasks work in place.
+- Big diffs/briefs inlined in prompts bloat every later turn. Paths, not payloads.
+- Spawn for 1-file edit: spawn cost > work.
