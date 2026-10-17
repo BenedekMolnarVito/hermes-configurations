@@ -39,6 +39,10 @@ $py = Get-Command python -ErrorAction SilentlyContinue
 if (-not $py -or $py.Source -like '*WindowsApps*') {
   throw 'A real `python` (3.9+) must be on PATH — hooks run `python ...`. Install from python.org or scoop.'
 }
+$py3 = Get-Command python3 -ErrorAction SilentlyContinue
+if (-not $py3 -or $py3.Source -like '*WindowsApps*') {
+  Say 'WARN: mem0 plugin hooks run `python3`, which is missing or the Store stub. Copy python.exe to python3.exe next to it, or mem0 capture/recall silently stops.'
+}
 if (-not (Get-Command claude -ErrorAction SilentlyContinue)) { throw '`claude` not on PATH — install Claude Code first.' }
 
 # Copy-Item with a .bak when the target exists and differs.

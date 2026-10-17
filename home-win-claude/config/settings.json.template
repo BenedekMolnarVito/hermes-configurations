@@ -53,6 +53,15 @@
             "timeout": 15
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"{{CLAUDE_HOME}}/agent-hooks/mem0_recall.py\"",
+            "timeout": 8
+          }
+        ]
       }
     ]
   },
@@ -68,10 +77,24 @@
         "source": "github",
         "repo": "JuliusBrussee/caveman"
       }
+    },
+    "mem0-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "mem0ai/mem0"
+      }
     }
   },
   "enabledPlugins": {
     "resumer@wong2-plugins": true,
-    "caveman@caveman": true
+    "caveman@caveman": true,
+    "mem0@mem0-plugins": true
+  },
+  "pluginConfigs": {
+    "mem0@mem0-plugins": {
+      "options": {
+        "user_id": "mem0-home-win-claude"
+      }
+    }
   }
 }

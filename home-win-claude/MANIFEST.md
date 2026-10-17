@@ -30,9 +30,11 @@ agent-hooks/jevlib/                     JEV TypeSafe client + decisions (ported 
 agent-hooks/jev-guard.json              JEV tiers, thresholds, pinned agents
 skills/jev-{decisions,engineering,team-roles}/  JEV typed-question scripts
 bin/claude-resumable.ps1                launcher with resumer channel
-plugins/plugins.json                    marketplaces + plugins (resumer, caveman)
+agent-hooks/mem0_recall.py              mem0 recall on every prompt (plugin core reuse, fail-open)
+plugins/plugins.json                    marketplaces + plugins (resumer, caveman, mem0)
 ```
 
 ## Secrets
 TYPESAFE_API_KEY: Windows user env only (export.ps1 scan fails if its value enters the bundle).
+MEM0 API key: plugin sensitive option (cached in plugins/data/mem0-mem0-plugins/api-key, never exported).
 None else. Pro subscription OAuth lives in ~/.claude/.credentials.json (never exported).

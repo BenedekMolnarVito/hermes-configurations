@@ -2,10 +2,12 @@
   "marketplaces": {
     "claude-plugins-official": "anthropics/claude-plugins-official",
     "wong2-plugins": "wong2/claude-plugins",
-    "caveman": "JuliusBrussee/caveman"
+    "caveman": "JuliusBrussee/caveman",
+    "mem0-plugins": "mem0ai/mem0"
   },
   "plugins": [
     "resumer@wong2-plugins",
-    "caveman@caveman"
+    "caveman@caveman",
+    "mem0@mem0-plugins"
   ]
 }

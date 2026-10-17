@@ -46,7 +46,7 @@ Prerequisites: Claude Code, a real `python` 3.9+ on PATH (not the Store `python3
 ```powershell
 cd home-win-claude
 ./install.ps1                    # preview
-./install.ps1 -Apply -Plugins    # copy, merge settings.json, install resumer + caveman
+./install.ps1 -Apply -Plugins    # copy, merge settings.json, install resumer + caveman + mem0
 [Environment]::SetEnvironmentVariable('TYPESAFE_API_KEY', '<key>', 'User')   # JEV; skip → JEV fail-open no-op
 ```
 
@@ -68,6 +68,7 @@ Changed files are backed up as `*.bak-<timestamp>`; `settings.json` is merged, n
 | 3 model routing | tiered agents (frontmatter `model` beats `CLAUDE_CODE_SUBAGENT_MODEL` since v2.1.251); `CLAUDE_CODE_SUBAGENT_MODEL=sonnet` as the cheap default for untyped spawns |
 | 4 cut input noise | CLAUDE.md context-hygiene rules (GitNexus first, filter output); Caveman in `manual` mode for chat (`/caveman` to opt in); inter-agent I/O always caveman (CLAUDE.md rule + `subagent-contract` hook) |
 | JEV (TypeSafe) | `agent-hooks/jevlib` (stdlib, fail-open) + `jev-guard.json`. `PreToolUse(Agent)`: bulk-classify deny + JEV model/effort route for unpinned agents w/o `model`. `UserPromptSubmit`: JEV skill-route hint. Skills `jev-decisions`, `jev-engineering`, `jev-team-roles`. Key from user env `TYPESAFE_API_KEY`; `[jev-skip]` bypasses. Privacy: prompts ≥20 chars + unpinned Agent briefs are sent to api.typesafe.ai |
+| mem0 memory | `mem0@mem0-plugins` retains automatically (hooks capture prompts/tools → flush to mem0 periodically, after 5 min idle, PreCompact, SessionEnd). Plugin recalls on the first prompt only → `agent-hooks/mem0_recall.py` (`UserPromptSubmit`) recalls on every later prompt ≥20 chars via the plugin's own core (same key cache, `user_id`, scope, per-session dedupe). Fail-open. API key: entered on plugin enable (sensitive, never in bundle). Plugin hooks call `python3` → installer warns if it's the Store stub. `/mem0:status` to check |
 | chunked PR review | `reviewer` (opus, has `Agent`) decides: small → alone; large → haiku `chunk-reviewer` per chunk (high-risk/JEV risk ≥1.5 chunks stay opus) → opus cross-ref via `XREF:` lists, confirms every haiku Critical/Important |
 
 ## Deliberately not ported from sap-mac-claude
