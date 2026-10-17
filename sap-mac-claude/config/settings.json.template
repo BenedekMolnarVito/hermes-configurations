@@ -19,7 +19,10 @@
     "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
     "OTEL_METRICS_EXPORTER": "otlp",
     "TYPESAFE_API_KEY": "__SET_ME_ON_IMPORT__",
-    "HERMES_HOME": "/Users/C5418860/.hermes"
+    "HERMES_HOME": "/Users/C5418860/.hermes",
+    "HINDSIGHT_API_URL": "https://api.hindsight.vectorize.io",
+    "HINDSIGHT_API_TOKEN": "__SET_ME_ON_IMPORT__",
+    "HINDSIGHT_BANK_ID": "sap-mac-hermes"
   },
   "includeCoAuthoredBy": false,
   "permissions": {
@@ -144,6 +147,37 @@
             "type": "command",
             "command": "python3 ~/.claude/agent-hooks/hook_skill_route_cc.py",
             "timeout": 15
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"~/.hindsight/coding-agents/dist/claude-hook.js\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"~/.hindsight/coding-agents/dist/claude-sessionstart-hook.js\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"~/.hindsight/coding-agents/dist/claude-stop-hook.js\"",
+            "timeout": 60
           }
         ]
       }

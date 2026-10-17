@@ -80,6 +80,7 @@ Nothing secret is stored in this repo. After import, edit
 | `env` | `TYPESAFE_API_KEY` | TypeSafe / JEV (used by jev-* skills and jev hooks) |
 | `env` | `JIRA_PERSONAL_TOKEN` | SAP Jira personal access token |
 | `mcpServers.jira.env` | `JIRA_PERSONAL_TOKEN` | same token, consumed by the Jira MCP server |
+| `env` | `HINDSIGHT_API_TOKEN` | Hindsight memory API token (get from hindsight.vectorize.io) |
 
 `settings.local.json` is a permission allowlist only — no secrets.
 
@@ -104,6 +105,13 @@ new box, make sure these exist or adjust them:
    Hermes home; paths were rewritten so this export is self-contained). They need
    `python3` on PATH; several import the bundled `jevlib`. Claude Code will ask
    you to approve each hook once — the allowlist is machine-local and NOT shipped.
+
+3. **Hindsight hooks** fire on `UserPromptSubmit`, `SessionStart`, and `Stop` via
+   `~/.hindsight/coding-agents/dist/claude-*.js`. These require the Hindsight
+   Coding Agents package installed at `~/.hindsight/coding-agents/`. Install it
+   via `claude /plugin install hindsight-coding-agent` (or follow the Hindsight
+   install guide). Set `HINDSIGHT_API_TOKEN` and `HINDSIGHT_BANK_ID` in
+   `settings.json` after import.
 
 3. **MCP server `jira`** runs `uvx mcp-atlassian` against `https://jira.tools.sap`.
    Needs `uv`/`uvx` installed and a valid `JIRA_PERSONAL_TOKEN`.
@@ -164,14 +172,14 @@ rsync -a --exclude='__pycache__/' --exclude='*.pyc' "$HK/jevlib/" config/agent-h
 ```
 
 Then **re-redact** `settings.json` into `config/settings.json.template`: strip
-the 3 secret values above (replace with `__SET_ME_ON_IMPORT__`) and rewrite hook
+the 4 secret values above (replace with `__SET_ME_ON_IMPORT__`) and rewrite hook
 command paths from `~/.hermes/agent-hooks/` to `~/.claude/agent-hooks/`. Strip
 machine-local `installPath`/timestamps from the plugin manifests. Never commit a
 live `settings.json`. The `.gitignore` blocks it as a safety net; always
 re-check before committing:
 
 ```bash
-grep -rnE '3ee73eb9|NTQ4ODMx|apikey_' config/   # must find nothing
+grep -rnE '3ee73eb9|NTQ4ODMx|apikey_|hsk_' config/   # must find nothing
 grep -c '__SET_ME_ON_IMPORT__' config/settings.json.template
 git -C .. status
 ```
